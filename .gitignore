@@ -56,3 +56,4 @@ doc/_build
 /.project
 /.settings/
 /bin/
+/target/
