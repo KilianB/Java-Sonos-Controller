@@ -46,7 +46,7 @@ sonos.registerSonosEventListener(new SonosEventAdapter() {
 }
 ```
 
-Gain full access by utilizing the entire range of callback methods found in the SonosEventListener.java
+Gain full access by utilizing the entire range of callback methods found in the [SonosEventListener.java](https://github.com/KilianB/Java-Sonos-Controller/blob/master/src/main/java/com/github/kilianB/sonos/listener/SonosEventListener.java).
 
 ## Soon available via maven central
 
