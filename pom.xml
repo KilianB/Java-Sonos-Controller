@@ -47,6 +47,7 @@
 			</plugin>
 		</plugins>
 	</build>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -76,5 +77,10 @@
 
 	</dependencies>
 
+	<scm>
+  		<connection>scm:git:git://github.com/KilianB/Java-Sonos-Controller.git</connection>
+ 		<developerConnection>scm:git:ssh://github.com/KilianB/Java-Sonos-Controller.git</developerConnection>
+  		<url>https://github.com/KilianB/Java-Sonos-Controller/tree/master</url>
+	</scm>
 	
 </project>
