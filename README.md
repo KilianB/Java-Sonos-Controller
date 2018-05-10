@@ -2,14 +2,10 @@
 <p align= "center">
 <img src ="http://blog.vmichalak.com/wp-content/uploads/2017/01/SONOS_controller_header.png" />
 </p>
-A fork of the tremendous sonos controller library originally created by <a href="https://github.com/vmichalak/sonos-controller">Valentin Michalak</a>.
-
-This repository features an implementation of the <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP 1.1 Event</a> subscription allowing 
-for notification to state changes of the speakers without polling. 
+A fork of the tremendous sonos controller library originally created by <a href="https://github.com/vmichalak/sonos-controller">Valentin Michalak</a>. This repository allows to subscribe to the<a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP 1.1 Event</a> endpoints allowing to receive continious updates of the devices state.
 
 # sonos-controller
 Java API for controlling [SONOS](http://www.sonos.com/) players.
-
 
 ## Basic Usage
 
@@ -64,18 +60,15 @@ Gain full access by utilizing the entire range of callback methods found in the 
 
 ## Why the fork?
 
-I decided to fork the project ultimately deciding against a pull request due to:
-
+Changes include
 <ol>
-	<li>A huge portion of the code being rewritten resulting in breaking changes and no backward compatibility</li>
+	<li>Implementing UPnP event subscriptions</li>
 	<li>Swapping out gradle</li>
 	<li>Adding support for log4j2</li>
 	<li>License change to GPLv3</li>
-	<li>The need of this code to be moved to maven central within a short period of time</li>
 </ol>
 
-
-If you look for a MIT version or high test coverage either contact me or take a look at the original repository. 
+I decided to fork the project instead of issuing a pull request due to the need of it being hosted on maven central within a short period of time. A huge portion of the code was being rewritten resulting in breaking changes and no backward compatibility If you look for a MIT version or high test coverage either contact me or take a look at the original repository. 
 
 ## Up next
 
