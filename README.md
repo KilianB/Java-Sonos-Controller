@@ -1,13 +1,15 @@
-![Sonos Controller Header](http://blog.vmichalak.com/wp-content/uploads/2017/01/SONOS_controller_header.png)
+
+<p align= "center">
+<img src ="http://blog.vmichalak.com/wp-content/uploads/2017/01/SONOS_controller_header.png" />
+</p>
+A fork of the tremendous sonos controller library originally created by <a href="https://github.com/vmichalak/sonos-controller">Valentin Michalak</a>.
+
+This repository features an implementation of the <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP 1.1 Event</a> subscription allowing 
+for notification to state changes of the speakers without polling. 
 
 # sonos-controller
 Java API for controlling [SONOS](http://www.sonos.com/) players.
 
-100% Android and Kotlin compatible.
-
-[![Travis Status](https://img.shields.io/travis/vmichalak/sonos-controller.svg)](https://travis-ci.org/vmichalak/sonos-controller)
-[![Coverage Status](https://coveralls.io/repos/github/vmichalak/sonos-controller/badge.svg?branch=master)](https://coveralls.io/github/vmichalak/sonos-controller?branch=master)
-[![Join us on Slack!](https://img.shields.io/badge/slack-sonoscontroller-lightgrey.svg)](https://join.slack.com/t/sonoscontroller/shared_invite/enQtMjYwMTQwMzc4ODE3LTQyMmZkMDFlNTQxNjJiZTJmOTZmZjljZmYzYmQxNmM1OTBkMTgyNzFlM2NiZmNjZjA4OWYxY2MxNTAyNTBmN2I)
 
 ## Basic Usage
 
@@ -17,7 +19,6 @@ Discovery all Sonos Devices on your network.
 List<SonosDevice> devices = SonosDiscovery.discover();
 ```
 
-
 Connect to a known Sonos and pause currently playing music.
 
 ```java
@@ -25,38 +26,77 @@ SonosDevice sonos = new SonosDevice("10.0.0.102");
 sonos.pause();
 ```
 
-## How to clone the project
+## UPnP Event Handling
 
-To clone and recover the dependencies do the following commands:
+Register event handlers to gain immediate access update events
+
+```java
+sonos.registerSonosEventListener(new SonosEventAdapter() {
+	
+	@Override
+	public void volumeChanged(int newVolume) {
+		System.out.println("Volume changed: " + newVolume);
+	}
+
+	@Override
+	public void playStateChanged(PlayState newPlayState) {
+		System.out.println("Playstate changed: " + newPlayState);
+	}
+
+	@Override
+	public void trackChanged(TrackInfo currentTrack) {
+		System.out.println("Track changed: " + currentTrack);
+	}
+}
 ```
-git clone https://github.com/vmichalak/sonos-controller.git
-cd sonos-controller
-git submodule init
-git submodule update
+
+Gain full access by utilizing the entire range of callback methods found in the SonosEventListener.java
+
+## Soon available via maven central
+
+```
+<dependency>
+	<groupId>com.github.kilianB</groupId>
+	<artifactId>sonosControler</artifactId>
+	<version>1.0.0</version>
+</dependency>
 ```
 
-## To-Do
+## Why the fork?
 
-[Link to the Trello](https://trello.com/b/0r87xvWy/sonos-controller)
+I decided to fork the project ultimately deciding against a pull request due to:
 
-## Contributors
+<ol>
+	<li>A huge portion of the code being rewritten resulting in breaking changes and no backward compatibility</li>
+	<li>Swapping out gradle</li>
+	<li>Adding support for log4j2</li>
+	<li>License change to GPLv3</li>
+	<li>The need of this code to be moved to maven central within a short period of time</li>
+</ol>
 
-The current lead maintainer is [Valentin Michalak](https://github.com/vmichalak) [(twitter)](https://twitter.com/valmichalak)
 
-Feel free to participate !
+If you look for a MIT version or high test coverage either contact me or take a look at the original repository. 
 
-## Join us on Slack !
+## Up next
 
-There is a Sonos Controller group over at [Slack](https://join.slack.com/t/sonoscontroller/shared_invite/enQtMjYwMTQwMzc4ODE3LTQyMmZkMDFlNTQxNjJiZTJmOTZmZjljZmYzYmQxNmM1OTBkMTgyNzFlM2NiZmNjZjA4OWYxY2MxNTAyNTBmN2I). Feel free to drop by for support, ideas or casual conversation related to Sonos Controller and Sonos in general :wink:.
+Investigate the UPnP event endpoints.
 
-## Sample projects made with this library
+<ul>
+<li>/MediaServer/ConnectionManager/Event</li>
+<li>/MediaRenderer/ConnectionManager/Event</li>
+<li>/MediaServer/ContentDirectory/Event</li>
+<li>/AlarmClock/Event</li>
+<li>/MusicServices/Event</li>
+<li>/SystemProperties/Event</li>
+</ul>
 
-[Sonos Remote Controller based on Android Things](https://www.hackster.io/mguntli/sonos-remote-things-e94011) by [Michael Guntli](https://github.com/mguntli)
 
-## Special Thanks
+How are topology changes best are tracked? (New device found  / device disconnected)
+Currently the library utilizes the `/ZoneGroupTopology/Event` as does the official client.
+But updates are delayed as much as two minutes.
+A different approach would be to either:
 
-Special Thanks to [rahims](https://github.com/rahims) for is work on Sonos API ! 
-
-## Licence
-
-Released under the [MIT license.](https://github.com/vmichalak/sonos-controller/blob/master/LICENCE.md)
+<ul>
+	<li>Timeout if no upnp advertisement is send within a certain timeframe?</li>
+	<li>Parse topology page of a sonos controler e.g. http://192.168.178.26:1400/status/topology  - polling ....</li>
+</ul>
