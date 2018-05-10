@@ -1,3 +1,7 @@
+#Mac
+.DS_Store
+._*
+
 # User-specific stuff:
 .idea/*
 .idea/workspace.xml
