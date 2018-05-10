@@ -3,7 +3,38 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>sonos-controller</groupId>
 	<artifactId>sonos-controller</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
+
+	<description>A java library allowing to control sonos speakers via UPnP.</description>
+	<url>https://github.com/KilianB/sonosControllerPrivate</url>
+	<name>${project.groupId}:${project.artifactId}</name>
+	
+	<licenses>
+		<license>
+			<name>GPL-3.0</name>
+			<url>https://www.gnu.org/licenses/gpl-3.0.en.html</url>
+		</license>
+	</licenses>
+	
+	<developers>
+		<developer>
+			<name>Kilian Brachtendorf</name>
+			<email>Kilian.Brachtendorf@t-online.de</email>
+			<organizationUrl>https://github.com/KilianB</organizationUrl>
+			<roles>
+				<role>Developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<name>Valentin Michalak</name>
+			<organizationUrl>https://github.com/vmichalak</organizationUrl>
+			<roles>
+				<role>Original Release</role>
+			</roles>
+		</developer>
+	</developers>
+
+
 	<build>
 		<plugins>
 			<plugin>
@@ -27,5 +58,23 @@
 			<artifactId>okhttp</artifactId>
 			<version>3.10.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jdom</groupId>
+			<artifactId>jdom2</artifactId>
+			<version>2.0.6</version>
+		</dependency>
+
 	</dependencies>
+
+	
 </project>
