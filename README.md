@@ -2,7 +2,7 @@
 <p align= "center">
 <img src ="http://blog.vmichalak.com/wp-content/uploads/2017/01/SONOS_controller_header.png" />
 </p>
-A fork of the tremendous sonos controller library originally created by <a href="https://github.com/vmichalak/sonos-controller">Valentin Michalak</a>. This repository allows to subscribe to the<a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP 1.1 Event</a> endpoints allowing to receive continious updates of the devices state.
+A fork of the tremendous sonos controller library originally created by <a href="https://github.com/vmichalak/sonos-controller">Valentin Michalak</a>. This repository allows to subscribe to the <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP 1.1 Event</a> endpoints enabling to receive continious updates of the devices state.
 
 # sonos-controller
 Java API for controlling [SONOS](http://www.sonos.com/) players.
