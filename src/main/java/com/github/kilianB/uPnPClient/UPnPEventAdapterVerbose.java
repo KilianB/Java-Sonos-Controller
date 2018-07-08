@@ -1,8 +1,9 @@
 package com.github.kilianB.uPnPClient;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
+
+import java.text.MessageFormat;
+import java.util.logging.Logger;
 
 /**
  * A default {@link UPnPEventListener} implementation logging the content of events 
@@ -13,7 +14,7 @@ import org.jdom2.Element;
  */
 public class UPnPEventAdapterVerbose implements UPnPEventListener{
 
-	private final static Logger LOGGER = LogManager.getLogger();
+	private final static Logger LOGGER = Logger.getLogger(UPnPEventAdapterVerbose.class.getName());
 	
 	private final String servicePath;
 	
@@ -23,34 +24,34 @@ public class UPnPEventAdapterVerbose implements UPnPEventListener{
 	
 	@Override
 	public void initialEventReceived(UPnPEvent event) {
-		LOGGER.debug("inital event");
-		LOGGER.info(event);
+		LOGGER.fine("inital event");
+		LOGGER.info(event.toString());
 		LOGGER.info(event.getBodyAsString());
 	}
 
 	@Override
 	public void eventReceived(UPnPEvent event) {
-		LOGGER.debug("value changed event");
-		LOGGER.info(event);
+		LOGGER.fine("value changed event");
+		LOGGER.info(event.toString());
 		LOGGER.info(event.getBodyAsString());
 		for(Element e : event.getProperties()) {
-			LOGGER.info(e);
+			LOGGER.info(e.toString());
 		}
 	}
 
 	@Override
 	public void eventSubscriptionExpired() {
-		LOGGER.error("Event subscription for: {} expired",servicePath);
+		LOGGER.severe(MessageFormat.format("Event subscription for: {0} expired", servicePath));
 	}
 
 	@Override
 	public void renewalFailed(Exception e) {
-		LOGGER.error("Renewal subscroption for: {} failed",servicePath);
+		LOGGER.severe(MessageFormat.format("Renewal subscroption for: {0} failed", servicePath));
 	}
 
 	@Override
 	public void unsubscribed() {
-		LOGGER.info("Unsubscribed from {}",servicePath);
+		LOGGER.info(MessageFormat.format("Unsubscribed from {0}", servicePath));
 	}
 	
 }

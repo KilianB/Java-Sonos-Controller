@@ -14,6 +14,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,14 +27,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
@@ -65,7 +65,7 @@ public class UPnPDevice {
 	private static final byte[] ACKNOWLEDGEMENT_MESSAGE = ACKNOWLEDGEMENT.getBytes();
 	private static final byte[] BAD_REQUEST_MESSAGE = BAD_REQUEST.getBytes();
 
-	private static final Logger LOGGER = LogManager.getLogger();
+	private static final Logger LOGGER = Logger.getLogger(UPnPDevice.class.getName());
 
 	private InetAddress deviceAddress;
 	/**
@@ -133,12 +133,12 @@ public class UPnPDevice {
 
 	/**
 	 * Get the server property of this UPnP Device. Specified by UPnP vendor.
-	 * String. Field value MUST begin with the following “product tokens” (defined
+	 * String. Field value MUST begin with the following ï¿½product tokensï¿½ (defined
 	 * by HTTP/1.1). The first product token identifies the operating system in the
 	 * form OS name/OS version, the second token represents the UPnP version and
 	 * MUST be UPnP/1.1, and the third token identifies the product using the form
-	 * product name/product version. For example, “SERVER: unix/5.1 UPnP/1.1
-	 * MyProduct/1.0”. Control points MUST be prepared to accept a higher minor
+	 * product name/product version. For example, ï¿½SERVER: unix/5.1 UPnP/1.1
+	 * MyProduct/1.0ï¿½. Control points MUST be prepared to accept a higher minor
 	 * version number of the UPnP version than the control point itself implements.
 	 * For example, control points implementing UDA version 1.0 will be able to
 	 * interoperate with devices implementing UDA version 1.1.
@@ -222,7 +222,7 @@ public class UPnPDevice {
 
 		Subscription subscription = new Subscription(eventHandler, servicePath, renewalPeriod);
 
-		LOGGER.debug("Subscribe to {}", servicePath);
+		LOGGER.fine(MessageFormat.format("Subscribe to {0}", servicePath));
 		/**
 		 * SUBSCRIBE publisher path HTTP/1.1 HOST: publisher host:publisher port
 		 * USER-AGENT: OS/version UPnP/1.1 product/version CALLBACK: <delivery URL> NT:
@@ -263,8 +263,8 @@ public class UPnPDevice {
 			String response = NetworkUtil.dumpReader(br);
 			String token = ParserHelper.findOne("SID: (.*)", response);
 			String timeout = ParserHelper.findOne("TIMEOOT:(.*)", response);
-			LOGGER.debug("Token: {}", token);
-			LOGGER.debug("Actual timeout: " + timeout);
+			LOGGER.fine(MessageFormat.format("Token: {0}", token));
+			LOGGER.fine("Actual timeout: " + timeout);
 
 			subscription.setToken(token);
 			subscriptions.put(token, subscription);
@@ -277,17 +277,17 @@ public class UPnPDevice {
 
 				int timeoutPeriod = renewalPeriod - 60;
 
-				LOGGER.debug("Schedule renewal interval" + timeoutPeriod);
+				LOGGER.fine("Schedule renewal interval" + timeoutPeriod);
 
 				if (timeoutPeriod < 0) {
-					LOGGER.error(
+					LOGGER.severe(
 							"Invalid renewal period specified. UPnP Subscription timeout has to be in the range of (60,]");
 					return null;
 				}
 
 				// Do some quick checks for sane input values
 				if (timeoutPeriod < 60) {
-					LOGGER.warn("Short renewal periods are discouraged.");
+					LOGGER.warning("Short renewal periods are discouraged.");
 				}
 
 				// TODO what happens if we have an error in this thread? Will the scheduler
@@ -365,7 +365,7 @@ public class UPnPDevice {
 			if (response.contains("200 OK")) {
 				String resend = ParserHelper.findOne("SID: (.*)", response);
 				System.out.println("Resubscription: " + response);
-				LOGGER.debug("Token: {}", resend);
+				LOGGER.fine(MessageFormat.format("Token: {0}", resend));
 				System.out.println("Token:" + resend);
 			} else if (response.contains("412 Precondition Failed")) {
 
@@ -377,7 +377,7 @@ public class UPnPDevice {
 			} else {
 				// TODO 400 incompatible header fields
 				// TODO 5xx unable to accept. device internal error
-				LOGGER.error("Unspecified error during renew subscription");
+				LOGGER.severe("Unspecified error during renew subscription");
 			}
 
 		}
@@ -387,7 +387,7 @@ public class UPnPDevice {
 		if (subscriptions.containsKey(sid)) {
 			return unsubscribe(subscriptions.get(sid));
 		} else {
-			LOGGER.warn("Could not unsubscribe from {} because no subscription was found fitting this criteria.", sid);
+			LOGGER.warning(MessageFormat.format("Could not unsubscribe from {0} because no subscription was found fitting this criteria.", sid));
 			return false;
 		}
 	}
@@ -399,8 +399,8 @@ public class UPnPDevice {
 		if (subscriptionEntry.isPresent()) {
 			return unsubscribe(subscriptionEntry.get().getValue());
 		} else {
-			LOGGER.warn("Could not unsubscribe from {} because no subscription was found fitting this criteria.",
-					servicePath);
+			LOGGER.warning(MessageFormat.format("Could not unsubscribe from {0} because no subscription was found fitting this criteria.",
+					servicePath));
 			return false;
 		}
 	}
@@ -429,12 +429,12 @@ public class UPnPDevice {
 				return true;
 			} else {
 				// TODO failed to unsubscribe.
-				LOGGER.error("failed to unsubscribe. {}", response);
+				LOGGER.severe(MessageFormat.format("failed to unsubscribe: {0}", response));
 
 			}
 		} catch (IOException io) {
-			LOGGER.error("failed to unsubscribe");
-			LOGGER.error(io);
+			LOGGER.severe("failed to unsubscribe");
+			LOGGER.severe(io.toString());
 		}
 		return false;
 		// Response with 200 ok
@@ -461,7 +461,7 @@ public class UPnPDevice {
 				// which can unexpacetly happen during parsing if udp sends a bad request.
 				// Prevent the entire
 				// callback thread to break.
-				LOGGER.error("An error occured during upnp event callback. Trying to recover", exception);
+				LOGGER.severe(MessageFormat.format("An error occured during upnp event callback. Trying to recover: {0}", exception));
 			}
 		}
 
@@ -483,7 +483,7 @@ public class UPnPDevice {
 				event = StringEscapeUtils.unescapeXml(event);
 			}
 
-			LOGGER.debug("Event: " + event);
+			LOGGER.fine("Event: " + event);
 
 			int indexXMLStart = event.indexOf("<e:propertyset");
 
@@ -503,21 +503,21 @@ public class UPnPDevice {
 			Subscription subscription = subscriptions.get(sid);
 
 			if (subscription == null) {
-				LOGGER.error("Received UPnP event does not match any expected sid");
+				LOGGER.severe("Received UPnP event does not match any expected sid");
 				return;
 			}
 
 			// Validation
 
 			if (seq <= subscription.getSequenceCount()) {
-				LOGGER.warn("UPnP Event arrived in wrong order.");
+				LOGGER.warning("UPnP Event arrived in wrong order.");
 			} else {
 				subscription.setSequenceCount(seq);;
 			}
 
 			// Chunked message?
 			if (transferEncoding.contains("chunked")) {
-				LOGGER.warn("implement chunk decoding");
+				LOGGER.warning("implement chunk decoding");
 			}
 
 			SAXBuilder saxBuilder = new SAXBuilder();
@@ -546,7 +546,7 @@ public class UPnPDevice {
 				socket.close();
 
 				System.out.println("ERROR");
-				LOGGER.error(e);
+				LOGGER.severe(e.toString());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
