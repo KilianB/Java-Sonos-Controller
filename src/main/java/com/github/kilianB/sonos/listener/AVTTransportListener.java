@@ -106,7 +106,13 @@ public class AVTTransportListener extends UPnPEventAdapterVerbose {
 		String currentTrackURI = StringEscapeUtils.unescapeXml(ParserHelper.extractEventValue(avtEvent, "CurrentTrackURI",upnpAVTNamespace));
 		String currentTrackDurationRaw = ParserHelper.extractEventValue(avtEvent, "CurrentTrackDuration",upnpAVTNamespace);
 
-		int trackDurationInSeconds = ParserHelper.formatedTimestampToSeconds(currentTrackDurationRaw);
+		int trackDurationInSeconds;
+		try {
+			trackDurationInSeconds = ParserHelper.formatedTimestampToSeconds(currentTrackDurationRaw);
+		} catch (NumberFormatException nfe) {
+			trackDurationInSeconds = 0;
+		}
+
 
 
 		TrackMetadata trackMeta = TrackMetadata
