@@ -7,6 +7,24 @@ A fork of the tremendous sonos controller library originally created by <a href=
 # sonos-controller
 Java API for controlling [SONOS](http://www.sonos.com/) players.
 
+## Available via Bintray and JCenter
+
+```
+<repositories>
+	<repository>
+		<id>jcenter</id>
+		<url>https://jcenter.bintray.com/</url>
+	</repository>
+</repositories>
+
+<dependency>
+	<groupId>github.com.kilianB</groupId>
+	<artifactId>sonos-controller</artifactId>
+	<version>1.0.0</version>
+	<type>pom</type>
+</dependency>
+```
+
 ## Basic Usage
 
 Discovery all Sonos Devices on your network.
@@ -48,15 +66,7 @@ sonos.registerSonosEventListener(new SonosEventAdapter() {
 
 Gain full access by utilizing the entire range of callback methods found in the [SonosEventListener.java](https://github.com/KilianB/Java-Sonos-Controller/blob/master/src/main/java/com/github/kilianB/sonos/listener/SonosEventListener.java).
 
-## Soon available via maven central
 
-```
-<dependency>
-	<groupId>com.github.kilianB</groupId>
-	<artifactId>sonosControler</artifactId>
-	<version>1.0.0</version>
-</dependency>
-```
 
 ## Why the fork?
 
