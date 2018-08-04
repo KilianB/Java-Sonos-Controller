@@ -28,7 +28,7 @@ public class SonosDiscovery {
     /**
      * Discover all SONOS speakers on network using SSDP (Simple Service Discovery Protocol).
      * @return List of SONOS speakers
-     * @throws IOException
+     * @throws IOException	network exception during 
      */
     public static List<SonosDevice> discover() throws IOException {
         return discover(DEFAULT_SCAN_DURATION);
@@ -38,10 +38,10 @@ public class SonosDiscovery {
      * Discover all SONOS speakers on network using SSDP (Simple Service Discovery Protocol).
      * @param scanDuration The number of seconds to wait while scanning for devices.
      * @return List of SONOS speakers
-     * @throws IOException
+     * @throws IOException network exception during device discovery
      */
     public static List<SonosDevice> discover(int scanDuration) throws IOException {
-        List<UPnPDevice> source =  new SimpleDeviceDiscovery().discoverDevices(1, scanDuration,SONOS_URN);
+        List<UPnPDevice> source =  SimpleDeviceDiscovery.discoverDevices(1, scanDuration,SONOS_URN);
         ArrayList<SonosDevice> output = new ArrayList<SonosDevice>();
         for (UPnPDevice device : source) { output.add(new SonosDevice(device)); }
         return Collections.unmodifiableList(output);
@@ -50,7 +50,7 @@ public class SonosDiscovery {
     /**
      * Discover one SONOS speakers on network using SSDP (Simple Service Discovery Protocol).
      * @return SONOS speaker
-     * @throws IOException
+     * @throws IOException network exception during device discovery
      */
     public static SonosDevice discoverOne() throws IOException {
         return discoverOne(DEFAULT_SCAN_DURATION);
@@ -60,7 +60,7 @@ public class SonosDiscovery {
      * Discover one SONOS speakers on network using SSDP (Simple Service Discovery Protocol).
      * @param scanDuration The number of seconds to wait while scanning for devices.
      * @return SONOS speaker
-     * @throws IOException
+     * @throws IOException network exception during device discovery
      */
     public static SonosDevice discoverOne(int scanDuration) throws IOException {
     	UPnPDevice source =  new SimpleDeviceDiscovery().discoverDevice(scanDuration, SONOS_URN);
@@ -72,7 +72,7 @@ public class SonosDiscovery {
      * Discover one SONOS speakers on network using SSDP (Simple Service Discovery Protocol) by UID.
      * @param uid Sonos Speaker UID
      * @return SONOS speaker
-     * @throws IOException
+     * @throws IOException network exception during device discovery
      */
     public static SonosDevice discoverByUID(String uid) throws IOException {
         return discoverByUID(uid, DEFAULT_SCAN_DURATION);
@@ -83,7 +83,7 @@ public class SonosDiscovery {
      * @param uid Sonos Speaker UID
      * @param scanDuration The number of seconds to wait while scanning for devices.
      * @return SONOS speaker
-     * @throws IOException
+     * @throws IOException network exception during device discovery
      */
     public static SonosDevice discoverByUID(String uid, int scanDuration) throws IOException {
         UPnPDevice source = new SimpleDeviceDiscovery().discoverDevice(scanDuration, "uuid:" + uid);
@@ -95,7 +95,7 @@ public class SonosDiscovery {
      * Discover one SONOS speakers on network using SSDP (Simple Service Discovery Protocol) by name.
      * @param name Sonos Speaker name.
      * @return Sonos speaker (or null if no speaker was found)
-     * @throws IOException
+     * @throws IOException network exception during device discovery
      */
     public static SonosDevice discoverByName(String name) throws IOException {
         return discoverByName(name, DEFAULT_SCAN_DURATION);
@@ -106,7 +106,7 @@ public class SonosDiscovery {
      * @param name Sonos Speaker name.
      * @param scanDuration The number of milliseconds to wait while scanning for devices.
      * @return Sonos speaker (or null if no speaker was found)
-     * @throws IOException
+     * @throws IOException network exception during device discovery
      */
     public static SonosDevice discoverByName(String name, int scanDuration) throws IOException {
         List<SonosDevice> sonosDevices = SonosDiscovery.discover(scanDuration);

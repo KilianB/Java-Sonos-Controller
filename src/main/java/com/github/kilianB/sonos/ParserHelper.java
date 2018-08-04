@@ -57,8 +57,8 @@ public class ParserHelper {
 	 /**
      * Converts the sonos upnp timestamp HH:MM:SS to 
      * a duration in seconds
-     * @param durationAsString
-     * @return
+     * @param durationAsString the duration 
+     * @return timestamp as seconds
      */
 	public static int formatedTimestampToSeconds(String durationAsString) {
 
@@ -70,8 +70,8 @@ public class ParserHelper {
 	/**
 	 * Converts seconds to a sonos upnp duration timestamp in the format
 	 * of HH:MM:SS
-	 * @param seconds
-	 * @return
+	 * @param seconds	the seconds
+	 * @return	converted timestamp in HH:MM:SS
 	 */
 	public static String secondsToFormatedTimestamp(int seconds) {
 		int hours =  seconds / 3600;

@@ -63,7 +63,6 @@ public class AVTTransportListener extends UPnPEventAdapterVerbose {
 
 			AVTransportEvent avtEvent = parseEvent(e);
 
-			
 			// This will always be true since we are creating
 			if (!currentTrack.sameBaseTrack(avtEvent.getCurrentTrack())) {
 				currentTrack = avtEvent.getCurrentTrack();

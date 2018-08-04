@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * A basic implementation of the UPnP (Universal Plug and Play) Simple Device
  * Discovery Protocol allowing to discover devices via UDP
  * 
- * @see http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
+ * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
  * @author Kilian
  *
  */
@@ -39,8 +39,8 @@ public class SimpleDeviceDiscovery {
 	/**
 	 * Discover all devices advertising themselves via the Simple Device Discovery
 	 * Protocol
-	 * 
-	 * @throws IOException
+	 * @return discovered devices
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static List<UPnPDevice> discoverDevices() throws IOException {
 		return discoverDevices(1, 2, null);
@@ -52,7 +52,8 @@ public class SimpleDeviceDiscovery {
 	 * 
 	 * @param searchTarget
 	 *            The search target to select specific devices or services
-	 * @throws IOException
+	 * @return discovered devices
+	 * @throws IOException if an I/O error occurs.
 	 */
 	public static List<UPnPDevice> discoverDevices(String searchTarget) throws IOException {
 		return discoverDevices(1, 2, searchTarget);
@@ -67,7 +68,8 @@ public class SimpleDeviceDiscovery {
 	 *            The number of seconds waited before the search is aborted
 	 * @param searchTarget
 	 *            The search target to select specific devices or services
-	 * @throws IOException
+	 * @return discovered devices
+	 * @throws IOException	 if an I/O error occurs.
 	 */
 	public static List<UPnPDevice> discoverDevices(int loadBalancingDelay, int timeout, String searchTarget)
 			throws IOException {
@@ -131,7 +133,7 @@ public class SimpleDeviceDiscovery {
 	 * 
 	 * @param searchTarget
 	 *            The search target to select specific devices or services
-	 * @throws IOException
+	 * @throws IOException  if an I/O error occurs.
 	 * @return the UPnPDevice found or null if no device was found
 	 */
 	public static UPnPDevice discoverDevice(String searchTarget) throws IOException {
@@ -145,7 +147,7 @@ public class SimpleDeviceDiscovery {
 	 *            The number of seconds waited before the search is aborted
 	 * @param searchTarget
 	 *            The search target to select specific devices or services
-	 * @throws IOException
+	 * @throws IOException  if an I/O error occurs.
 	 * @return the UPnPDevice found or null if no device was found
 	 */
 	public UPnPDevice discoverDevice(int timeout, String searchTarget) throws IOException {
@@ -162,7 +164,7 @@ public class SimpleDeviceDiscovery {
 	 *            The number of seconds waited before the search is aborted
 	 * @param searchTarget
 	 *            The search target to select specific devices or services
-	 * @throws IOException
+	 * @throws IOException  if an I/O error occurs.
 	 * @return the UPnPDevice found or null if no device was found
 	 */
 	public static UPnPDevice discoverDevice(int loadBalancingDelay, int timeout, String searchTarget)
@@ -202,7 +204,7 @@ public class SimpleDeviceDiscovery {
 	 * @param timeout
 	 *            in miliseconds
 	 * @param searchTarget
-	 * @return
+	 * @return	upnp request as string
 	 */
 	private static String prepareRequest(int loadBalancingDelay, int timeout, String searchTarget) {
 		if (loadBalancingDelay < 1 || loadBalancingDelay > 5) {

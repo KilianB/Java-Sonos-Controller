@@ -48,10 +48,10 @@ public class NetworkUtil {
 	
 	
 	/**
-	 * 
-	 * @param br
-	 * @return
-	 * @throws IOException
+	 * Collect all content available in the reader and return it as a string 
+	 * @param br Buffered Reader input source
+	 * @return	Content of the reader as string
+	 * @throws IOException Exception thrown during read operation.
 	 */
 	public static String dumpReader(BufferedReader br) throws IOException {
 		StringBuilder response = new StringBuilder();

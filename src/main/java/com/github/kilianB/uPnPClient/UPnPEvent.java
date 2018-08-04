@@ -15,7 +15,7 @@ import org.jdom2.output.XMLOutputter;
  * A UPnP 1.1 unicast event emitted by devices after subscribing to it's services.
  * 
  * @author Kilian
- * @see http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
+ * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
  *
  */
 public class UPnPEvent{
@@ -79,7 +79,7 @@ public class UPnPEvent{
 	 * @param sid				subscription identifier
 	 * @param seq				sequence identifier
 	 * @param body				body of the upnp event
-	 * @see http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
+	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
 	 */
 	public UPnPEvent(String httpHeader, String host, String connection, int contentLength, String nt,
 			String nts, String sid, int seq, Document body) {
@@ -138,8 +138,7 @@ public class UPnPEvent{
 	}
 
 	/**
-	 * The body of the upnp event as well formated and idented xml
-	 * @return
+	 * @return	The body of the upnp event as well formated and idented xml
 	 */
 	public String getBodyAsString() {
 		XMLOutputter xmlOut = new XMLOutputter();

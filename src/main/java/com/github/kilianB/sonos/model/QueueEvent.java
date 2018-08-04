@@ -5,7 +5,7 @@ import java.util.Optional;
 /**
  * Property of a UPnP Queue Changed Event
  * @author Kilian
- * @see {@link com.github.kilianB.sonos.listener.MediaRendererQueueListener MediaRendererQueueListener}
+ * @see com.github.kilianB.sonos.listener.MediaRendererQueueListener MediaRendererQueueListener
  *
  */
 public class QueueEvent {

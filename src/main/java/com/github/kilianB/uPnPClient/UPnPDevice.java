@@ -6,38 +6,27 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.commons.text.StringEscapeUtils;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
-import org.xml.sax.SAXException;
 
 import com.github.kilianB.NetworkUtil;
 import com.github.kilianB.StringUtil;
@@ -110,9 +99,9 @@ public class UPnPDevice {
 	}
 
 	/**
-	 * Get the InetAddress of te UPnPDevice
+	 * Get the InetAddress of the UPnPDevice
 	 * 
-	 * @return
+	 * @return the address of the device
 	 */
 	public InetAddress getIP() {
 		return deviceAddress;
@@ -125,7 +114,7 @@ public class UPnPDevice {
 	 * @return Field value contains a URL to the UPnP description of the root
 	 *         device. Normally the host portion contains a literal IP address
 	 *         rather than a domain name in unmanaged networks
-	 * @see http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
+	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
 	 */
 	public String getLocation() {
 		return deviceInfo.get("LOCATION");
@@ -143,8 +132,8 @@ public class UPnPDevice {
 	 * For example, control points implementing UDA version 1.0 will be able to
 	 * interoperate with devices implementing UDA version 1.1.
 	 * 
-	 * @see http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
-	 * @return
+	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
+	 * @return The server property
 	 */
 	public String getServer() {
 		return deviceInfo.get("SERVER");
@@ -156,8 +145,8 @@ public class UPnPDevice {
 	 * ST header field that was sent in the request. In some cases, the device MUST
 	 * send multiple response messages as follows.
 	 * 
-	 * @see http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
-	 * @return
+	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
+	 * @return The st field value
 	 */
 	public String getSearchTarget() {
 		return deviceInfo.get("ST");
@@ -166,8 +155,8 @@ public class UPnPDevice {
 	/**
 	 * Get the Unique Service Name property of this UPnP Device.
 	 * 
-	 * @see http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
-	 * @return
+	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
+	 * @return The usn field value
 	 */
 	public String getUniqueServiceName() {
 		return deviceInfo.get("USN");
@@ -177,7 +166,7 @@ public class UPnPDevice {
 	/**
 	 * Return the content of a field retrieved during SimpleDeviceDiscovery
 	 * @param fieldID The id of the header field
-	 * @return
+	 * @return the content of the field
 	 */
 	public String getField(String fieldID) {
 		return deviceInfo.get(fieldID);
@@ -196,7 +185,7 @@ public class UPnPDevice {
 	 * @param eventHandler The event handler being called once the device sends an event
 	 * @param servicePath The service path of the event
 	 * @return the service identifier used to uniquely identify the subscription
-	 * @throws IOException
+	 * @throws IOException IOException thrown during subscription 
 	 */
 	public String subscribe(UPnPEventListener eventHandler, String servicePath) throws IOException {
 		return subscribe(eventHandler, servicePath, 3600);
@@ -212,18 +201,19 @@ public class UPnPDevice {
 	 * @param servicePath
 	 *            The service path of the event
 	 * @param renewalPeriod
-	 *            Renewal period in seconds. If > 0 a renewal request will be send
+	 *            Renewal period in seconds. If {@literal >} 0 a renewal request will be send
 	 *            before the subscription expires. Usual periods are around 1 hour.
-	 *            Has to be > 60 secs Else the subscription will timeout.
+	 *            Has to be {@literal >} 60 secs Else the subscription will timeout.
 	 * @return the service identifier used to uniquely identify the subscription or null if invalid arguments were supplied
-	 * @throws IOException
+	 * @throws IOException Exception thrown during subscription
 	 */
 	public String  subscribe(UPnPEventListener eventHandler, String servicePath, int renewalPeriod) throws IOException {
 
 		Subscription subscription = new Subscription(eventHandler, servicePath, renewalPeriod);
 
 		LOGGER.fine(MessageFormat.format("Subscribe to {0}", servicePath));
-		/**
+		
+		/*
 		 * SUBSCRIBE publisher path HTTP/1.1 HOST: publisher host:publisher port
 		 * USER-AGENT: OS/version UPnP/1.1 product/version CALLBACK: <delivery URL> NT:
 		 * * upnp:event
@@ -337,8 +327,8 @@ public class UPnPDevice {
 
 	/**
 	 * Issue a renewal request 
-	 * @param subscription
-	 * @throws IOException
+	 * @param subscription	Subscription which will be renewed
+	 * @throws IOException IOException thrown when device can not be reached
 	 */
 	private void renewSubscription(Subscription subscription) throws IOException {
 
@@ -575,9 +565,9 @@ public class UPnPDevice {
 	 * be used to subscribe to events but does not contain information usually
 	 * transmitted via the SSDP advertisement.
 	 * 
-	 * @param ip
-	 * @return
-	 * @throws UnknownHostException
+	 * @param ip	Ip of the fake device
+	 * @return	A UPnPDevice pointing to the ip
+	 * @throws UnknownHostException	If the ip is not well formated or valid
 	 */
 	public static UPnPDevice createDummyDevice(String ip) throws UnknownHostException {
 		return new UPnPDevice(InetAddress.getByName(ip), null);

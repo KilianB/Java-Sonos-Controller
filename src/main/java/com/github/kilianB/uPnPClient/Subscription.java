@@ -62,7 +62,7 @@ public class Subscription {
 	}
 
 	/**
-	 * @param servicePath
+	 * @param servicePath the relative path of the service
 	 */
 	public void setServicePath(String servicePath) {
 		this.servicePath = servicePath;
@@ -79,7 +79,7 @@ public class Subscription {
 
 	/**
 	 * Sets the subscriptions renewal future used to renew the event subscription
-	 * @param renewalFuture
+	 * @param renewalFuture	the future in charge of resubscribing
 	 */
 	public void setRenewalFuture(ScheduledFuture<?> renewalFuture) {
 		this.renewalFuture = renewalFuture;
@@ -89,7 +89,7 @@ public class Subscription {
 	 * The current sequence count of the subscription event. The sequence count increases
 	 * with every received event and can be used to track the sequential order as well as if
 	 * events were lost due to UDP unreliability
-	 * @return
+	 * @return the last submitted sequence count submitted by the device
 	 */
 	public int getSequenceCount() {
 		return sequenceCount;
