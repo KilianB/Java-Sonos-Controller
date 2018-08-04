@@ -8,11 +8,10 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 /**
  * A basic implementation of the UPnP (Universal Plug and Play) Simple Device
  * Discovery Protocol allowing to discover devices via UDP
@@ -25,7 +24,7 @@ public class SimpleDeviceDiscovery {
 
 	public static final String USER_AGENT = "Linux UPnP/1.0 Sonos/42.2-52113 (WDCR:Microsoft Windows NT 10.0.16299)";
 
-	private static final Logger LOGGER = LogManager.getLogger();
+	private static final Logger LOGGER = Logger.getLogger(SimpleDeviceDiscovery.class.getName());
 
 	private static final String UPNP_HOST = "239.255.255.250";
 	private static final int UPNP_PORT = 1900;
@@ -207,12 +206,12 @@ public class SimpleDeviceDiscovery {
 	 */
 	private static String prepareRequest(int loadBalancingDelay, int timeout, String searchTarget) {
 		if (loadBalancingDelay < 1 || loadBalancingDelay > 5) {
-			LOGGER.warn("Load balancing delay should be within [1-5] seconds. A default of 1s is assumed");
+			LOGGER.warning("Load balancing delay should be within [1-5] seconds. A default of 1s is assumed");
 			loadBalancingDelay = 1;
 		}
 
 		if (loadBalancingDelay >= (timeout / 1000)) {
-			LOGGER.warn(
+			LOGGER.warning(
 					"Load balancing delay should not be higher or equal than the timeout. This will lead to some devices not being discovered!");
 		}
 

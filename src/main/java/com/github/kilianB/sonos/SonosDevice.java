@@ -19,15 +19,15 @@ import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 import org.jdom2.filter.Filters;
@@ -742,7 +742,7 @@ public class SonosDevice {
 				getRoomName();
 			} catch (IOException | SonosControllerException e) {
 				// The cached call should not require to handle exceptions all the time.
-				LOGGER.error("Could not retrieve the room name of the device.", e);
+				LOGGER.severe(MessageFormat.format("Could not retrieve the room name of the device: {0}", e));
 			}
 		}
 		return roomName;
@@ -750,7 +750,7 @@ public class SonosDevice {
 
 	/**
 	 * Get the room name. (for exemple: "Bedroom", "Living Room", ...)
-	 * 
+	 *
 	 * @return the room name.
 	 * @throws IOException
 	 * @throws SonosControllerException
@@ -769,7 +769,7 @@ public class SonosDevice {
 	 * called at least once. <p> This method hides the usual IO and SonosControler
 	 * Exceptions for convenience sake. To ensure you got a prober result the first
 	 * return value should be checked against null.
-	 * 
+	 *
 	 * @return the cached room name of the device or null if the room name wasn't
 	 *         retrieved at least once
 	 */
@@ -779,7 +779,7 @@ public class SonosDevice {
 				getDeviceName();
 			} catch (IOException | SonosControllerException e) {
 				// The cached call should not require to handle exceptions all the time.
-				LOGGER.error("Could not retrieve the device name.", e);
+				LOGGER.severe(MessageFormat.format("Could not retrieve the device name: {0}", e));
 			}
 		}
 		return deviceName;
@@ -947,7 +947,7 @@ public class SonosDevice {
 			}
 			return sucess;
 		} else {
-			LOGGER.debug("Event listener {} already registered", eventHandler);
+			LOGGER.fine(MessageFormat.format("Event listener {0} already registered", eventHandler));
 			return false;
 		}
 	}
@@ -967,7 +967,7 @@ public class SonosDevice {
 			return true;
 		
 		} else {
-			LOGGER.debug("Trying to remove event listener {} but it's not ´registered", eventHandler);
+			LOGGER.fine(MessageFormat.format("Trying to remove event listener {0} but it's not registered", eventHandler));
 			return false;
 		}
 	}
@@ -999,7 +999,7 @@ public class SonosDevice {
 			if(uPnPDevice.unsubscribeFromToken(sid)) {
 				eventKeys.remove();
 			}else {
-				LOGGER.warn("Could not unsubscreibe from " + sid);
+				LOGGER.warning("Could not unsubscreibe from " + sid);
 			}
 		}
 		uPnPSubscribed = false;
@@ -1009,7 +1009,7 @@ public class SonosDevice {
 		return sonosEventHandlers;
 	}
 
-	private static final Logger LOGGER = LogManager.getLogger();
+	private static final Logger LOGGER = Logger.getLogger(SonosDevice.class.getName());
 
 
 }
