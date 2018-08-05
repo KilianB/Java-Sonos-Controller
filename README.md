@@ -1,9 +1,7 @@
-
-# sonos-controller
-Java API for controlling [SONOS](http://www.sonos.com/) players. 
-
 [ ![Download](https://api.bintray.com/packages/kilianb/maven/Java-Sonos-Controller/images/download.svg) ](https://bintray.com/kilianb/maven/Java-Sonos-Controller/_latestVersion)
 
+# Sonos-controller
+Java API for controlling [SONOS](http://www.sonos.com/) players. 
 
 <p align= "center">
 <img src ="http://blog.vmichalak.com/wp-content/uploads/2017/01/SONOS_controller_header.png" />
