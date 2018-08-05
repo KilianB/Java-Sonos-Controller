@@ -1,11 +1,13 @@
 
+# sonos-controller
+Java API for controlling [SONOS](http://www.sonos.com/) players. 
+
+[ ![Download](https://api.bintray.com/packages/kilianb/maven/Java-Sonos-Controller/images/download.svg) ](https://bintray.com/kilianb/maven/Java-Sonos-Controller/_latestVersion)
+
+
 <p align= "center">
 <img src ="http://blog.vmichalak.com/wp-content/uploads/2017/01/SONOS_controller_header.png" />
 </p>
-A fork of the tremendous sonos controller library originally created by <a href="https://github.com/vmichalak/sonos-controller">Valentin Michalak</a>. This repository allows to subscribe to the <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP 1.1 Event</a> endpoints enabling to receive continious updates of the devices state.
-
-# sonos-controller
-Java API for controlling [SONOS](http://www.sonos.com/) players.
 
 ## Available via Bintray and JCenter
 
@@ -42,7 +44,7 @@ sonos.pause();
 
 ## UPnP Event Handling
 
-Register event handlers to gain immediate access update events
+Register event handlers to gain immediate access to update events
 
 ```java
 sonos.registerSonosEventListener(new SonosEventAdapter() {
@@ -68,17 +70,18 @@ Gain full access by utilizing the entire range of callback methods found in the 
 
 
 
-## Why the fork?
+## Original contribution
 
-Changes include
+A fork of the tremendous sonos controller library originally created by <a href="https://github.com/vmichalak/sonos-controller">Valentin Michalak</a>. 
+
+Based upon this changes include:
 <ol>
 	<li>Implementing UPnP event subscriptions</li>
 	<li>Swapping out gradle</li>
-	<li>Adding support for log4j2</li>
 	<li>License change to GPLv3</li>
 </ol>
 
-I decided to fork the project instead of issuing a pull request due to the need of it being hosted on maven central within a short period of time. A huge portion of the code was being rewritten resulting in breaking changes and no backward compatibility If you look for a MIT version or high test coverage either contact me or take a look at the original repository. 
+This repository allows to subscribe to the <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP 1.1 Event</a> endpoints enabling to receive continious updates of the devices state. I decided to fork the project instead of issuing a pull request due to the need of it being hosted via maven central within a (short) period of time. A huge portion of the code was being rewritten resulting in breaking changes and no backward compatibility If you look for a MIT version or high test coverage either contact me or take a look at the original repository. 
 
 ## Up next
 
