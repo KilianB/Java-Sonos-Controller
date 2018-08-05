@@ -9,8 +9,8 @@ package com.github.kilianB.uPnPClient;
  * </code>
  *  
  * @author Kilian
- * @see {@link UPnPEventAdapter} for an adapter version
- * @see {@link UPnPEventAdapterVerbose} as a default event listener implementation
+ * @see UPnPEventAdapter UPnPEventAdapter for an adapter version
+ * @see UPnPEventAdapterVerbose UPnPEventAdapterVerbose as a default event listener implementation
  *
  */
 public interface UPnPEventListener {
@@ -38,7 +38,7 @@ public interface UPnPEventListener {
 	/**
 	 * Method will be called if the re-subscription to the event failed.
 	 * From this point on no events will be received..
-	 * @param e
+	 * @param e	Exception why the renewal failed
 	 */
 	public void renewalFailed(Exception e);
 	

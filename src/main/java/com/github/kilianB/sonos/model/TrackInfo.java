@@ -39,9 +39,7 @@ public class TrackInfo {
 	}
 
 	/**
-	 * Returns the current position of the song in the format HH:MM:SS
-	 * 
-	 * @return
+	 * @return	the current position of the song in the format HH:MM:SS
 	 */
 	public String getPositionAsString() {
 		return ParserHelper.secondsToFormatedTimestamp(position);
@@ -64,11 +62,15 @@ public class TrackInfo {
 	/**
 	 * Compare if two track infos point to the same song
 	 * 
-	 * @param infoToCompareTo
-	 * @return
+	 * This method is used instead of equals due to some fields (e.g. position) not being taken account of.
+	 * 
+	 * @param infoToCompareTo The trackInfo this object gets compared to
+	 * @return true if both tracks point to the same track. 
 	 */
 	public boolean sameBaseTrack(TrackInfo infoToCompareTo) {
 		return (this.uri.equals(infoToCompareTo.uri) && this.metadata.equals(infoToCompareTo.metadata));
 	}
+	
+	
 
 }
