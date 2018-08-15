@@ -21,7 +21,6 @@ Java API for controlling [SONOS](http://www.sonos.com/) players.
 	<groupId>github.com.kilianB</groupId>
 	<artifactId>sonos-controller</artifactId>
 	<version>1.0.0</version>
-	<type>pom</type>
 </dependency>
 ```
 
