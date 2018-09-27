@@ -5,8 +5,16 @@
 	-fx-border-width: 2px;
 	-fx-border-color: black;
 	-fx-pref-width: 140;
-	-fx-pref-height: 80;
+	-fx-pref-height: 100;
 	-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.8), 10, 0, 0, 0);
+}
+
+.zoneToken.selected{
+	-fx-background-color: #ccc;
+}
+
+.zoneNameTitle{
+	-fx-font-size: 14pt ;
 }
 
 .scroll-pane>.viewport {
