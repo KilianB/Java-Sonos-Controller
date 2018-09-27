@@ -973,7 +973,18 @@ public class SonosDevice {
 			return false;
 		}
 	}
-
+	
+	
+	@Deprecated
+	/**
+	 * Get the uPnPDevice backing this sonos controller. Calling this method usually is not 
+	 * necessary and there is mostly no reason to access the underlying device.
+	 * @return the upnp device
+	 */
+	public UPnPDevice getUPnPDevice() {
+		return uPnPDevice;
+	}
+	
 	private void subscribeToUPnPEvents() {
 		// Subscribe to all events
 		try {
@@ -1014,11 +1025,16 @@ public class SonosDevice {
 		}
 		uPnPSubscribed = false;
 	}
-
+	
 	public List<SonosEventListener> getEventListener() {
 		return sonosEventHandlers;
 	}
-
+	
+	
+	public String resolveAlbumURL(String baseURL) {
+		return "http://" + ip + ":1400" + baseURL; 
+	}
+	
 	private static final Logger LOGGER = Logger.getLogger(SonosDevice.class.getName());
 
 }

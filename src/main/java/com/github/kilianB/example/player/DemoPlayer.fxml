@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <left>
+      <ScrollPane prefHeight="322.0" prefViewportHeight="336.0" prefViewportWidth="100.0" prefWidth="160.0" style="-fx-background-color: white;">
+         <content>
+            <VBox fx:id="roomRoot" spacing="20.0" style="-fx-background-color: white;" BorderPane.alignment="CENTER">
+               <padding>
+                  <Insets left="10.0" top="10.0" />
+               </padding></VBox>
+         </content>
+      </ScrollPane>
+   </left>
+   <top>
+      <FlowPane alignment="CENTER" columnHalignment="CENTER" prefHeight="64.0" prefWidth="200.0" style="-fx-background-color: white;" BorderPane.alignment="CENTER">
+         <children>
+            <ImageView fx:id="backBtn" fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true" />
+            <ImageView fx:id="playPauseBtn" fitHeight="64.0" fitWidth="64.0" pickOnBounds="true" preserveRatio="true" />
+            <ImageView fx:id="forwardBtn" fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true" />
+         </children>
+      </FlowPane>
+   </top>
+   <right>
+      <TreeView prefHeight="322.0" prefWidth="160.0" BorderPane.alignment="CENTER" />
+   </right>
+   <center>
+      <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+         <children>
+            <Slider />
+            <JFXTreeTableView fx:id="playlistTable" />
+         </children>
+      </VBox>
+   </center>
+   <bottom>
+      <FlowPane prefHeight="34.0" prefWidth="1000.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button mnemonicParsing="false" text="Button" />
+            <Button mnemonicParsing="false" text="Button" />
+         </children>
+      </FlowPane>
+   </bottom>
+</BorderPane>

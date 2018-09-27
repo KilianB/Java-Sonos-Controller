@@ -15,7 +15,7 @@
 		<bintrayPackage>Java-Sonos-Controller</bintrayPackage>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-	
+
 	<licenses>
 		<license>
 			<name>GPL-3.0</name>
@@ -103,8 +103,18 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<dependencies>
+
+		<!--  Only for demo -->
+		<dependency>
+			<groupId>com.jfoenix</groupId>
+			<artifactId>jfoenix</artifactId>
+			<version>8.0.4</version>
+		</dependency>
+
+		<!--  used for the library -->
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
@@ -133,9 +143,9 @@
 
 
 	<scm>
-  		<connection>scm:git:git://github.com/KilianB/Java-Sonos-Controller.git</connection>
- 		<developerConnection>scm:git:ssh://github.com/KilianB/Java-Sonos-Controller.git</developerConnection>
-  		<url>https://github.com/KilianB/Java-Sonos-Controller/tree/master</url>
+		<connection>scm:git:git://github.com/KilianB/Java-Sonos-Controller.git</connection>
+		<developerConnection>scm:git:ssh://github.com/KilianB/Java-Sonos-Controller.git</developerConnection>
+		<url>https://github.com/KilianB/Java-Sonos-Controller/tree/master</url>
 	</scm>
-	
+
 </project>

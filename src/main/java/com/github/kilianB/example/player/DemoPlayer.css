@@ -1,0 +1,14 @@
+.zoneToken {
+	-fx-background-color: white;
+	-fx-background-radius: 5px;
+	-fx-border-radius: 5px;
+	-fx-border-width: 2px;
+	-fx-border-color: black;
+	-fx-pref-width: 140;
+	-fx-pref-height: 80;
+	-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.8), 10, 0, 0, 0);
+}
+
+.scroll-pane>.viewport {
+	-fx-background-color: transparent;
+}
