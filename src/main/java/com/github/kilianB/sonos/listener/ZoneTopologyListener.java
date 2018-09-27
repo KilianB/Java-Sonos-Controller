@@ -9,6 +9,7 @@ import org.jdom2.Element;
 
 import com.github.kilianB.sonos.SonosDevice;
 import com.github.kilianB.uPnPClient.UPnPEvent;
+import com.github.kilianB.uPnPClient.UPnPEventAdapter;
 import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
 
 /**
@@ -22,7 +23,7 @@ import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
  * @author Kilian
  *
  */
-public class ZoneTopologyListener extends UPnPEventAdapterVerbose {
+public class ZoneTopologyListener extends UPnPEventAdapter {
 
 
 	/**
@@ -43,7 +44,7 @@ public class ZoneTopologyListener extends UPnPEventAdapterVerbose {
 	private SonosDevice device;
 	
 	public ZoneTopologyListener(String servicePath, SonosDevice device) {
-		super(servicePath);
+		//super(servicePath);
 		this.device = device;
 		this.listeners = device.getEventListener();
 	}

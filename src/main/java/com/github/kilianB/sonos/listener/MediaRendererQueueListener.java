@@ -10,6 +10,7 @@ import org.jdom2.Namespace;
 import com.github.kilianB.sonos.SonosDevice;
 import com.github.kilianB.sonos.model.QueueEvent;
 import com.github.kilianB.uPnPClient.UPnPEvent;
+import com.github.kilianB.uPnPClient.UPnPEventAdapter;
 import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
 
 /**
@@ -18,7 +19,7 @@ import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
  * @author Kilian
  *
  */
-public class MediaRendererQueueListener extends UPnPEventAdapterVerbose {
+public class MediaRendererQueueListener extends UPnPEventAdapter {
 
 	private static final Namespace upnpQueueNamespace= Namespace.getNamespace("urn:schemas-sonos-com:metadata-1-0/Queue/");
 	
@@ -28,20 +29,20 @@ public class MediaRendererQueueListener extends UPnPEventAdapterVerbose {
 	private final List<SonosEventListener> listeners;
 	
 	public MediaRendererQueueListener(String servicePath,SonosDevice device) {
-		super(servicePath);
+		//super(servicePath);
 		this.listeners = device.getEventListener();
 	}
 
 	@Override
 	public void initialEventReceived(UPnPEvent event) {
-		System.out.println("Initial event: ");
-		System.out.println(event.getBodyAsString());
+		//System.out.println("Initial event: ");
+		//System.out.println(event.getBodyAsString());
 	}
 
 	@Override
 	public void eventReceived(UPnPEvent event) {
-		System.out.println("Value changed event: ");
-		System.out.println(event.getBodyAsString());
+		//System.out.println("Value changed event: ");
+		//System.out.println(event.getBodyAsString());
 		
 		for(Element e : event.getProperties()) {
 			
@@ -50,8 +51,7 @@ public class MediaRendererQueueListener extends UPnPEventAdapterVerbose {
 			List<QueueEvent> queuesAffected= new ArrayList<QueueEvent>();
 			
 			for(Element ee : modifiedQueues) {
-				System.out.println("Child: " + ee);
-				
+		
 				int queueId = Integer.parseInt(ee.getAttributeValue("val"));
 				int updatedId = -1;
 				

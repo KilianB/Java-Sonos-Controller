@@ -14,6 +14,7 @@ import com.github.kilianB.sonos.model.PlayState;
 import com.github.kilianB.sonos.model.TrackInfo;
 import com.github.kilianB.sonos.model.TrackMetadata;
 import com.github.kilianB.uPnPClient.UPnPEvent;
+import com.github.kilianB.uPnPClient.UPnPEventAdapter;
 import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
 
 /**
@@ -22,7 +23,7 @@ import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
  * @author Kilian
  *
  */
-public class AVTTransportListener extends UPnPEventAdapterVerbose {
+public class AVTTransportListener extends UPnPEventAdapter {
 
 	private static final Namespace upnpAVTNamespace = Namespace.getNamespace("urn:schemas-upnp-org:metadata-1-0/AVT/");
 	private static final  Namespace upnpRinnconnectsNamespace =  Namespace.getNamespace("r","urn:schemas-rinconnetworks-com:metadata-1-0/");
@@ -38,7 +39,7 @@ public class AVTTransportListener extends UPnPEventAdapterVerbose {
 	private PlayState currentPlayState;
 	
 	public AVTTransportListener(String servicePath, SonosDevice device) {
-		super(servicePath);
+		//super(servicePath);
 		this.listeners = device.getEventListener();
 	}
 
@@ -85,8 +86,6 @@ public class AVTTransportListener extends UPnPEventAdapterVerbose {
 				}
 			}
 
-			System.out.println(event.getBodyAsString());
-			
 			for (SonosEventListener listener : listeners) {
 				listener.avtTransportEvent(avtEvent);
 			}
