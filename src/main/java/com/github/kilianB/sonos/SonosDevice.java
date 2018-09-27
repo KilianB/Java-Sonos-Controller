@@ -152,7 +152,6 @@ public class SonosDevice {
 	 */
 	@Deprecated
 	public SonosDevice(String ip) throws UnknownHostException {
-		System.out.println("IP: " + ip);
 		this.uPnPDevice = UPnPDevice.createDummyDevice(ip);
 		this.ip = ip;
 	}
@@ -380,6 +379,7 @@ public class SonosDevice {
 				ParserHelper.findOne("<TrackURI>(.*)</TrackURI>", r),
 				TrackMetadata.parse(ParserHelper.findOne("<TrackMetaData>(.*)</TrackMetaData>", r)));
 	}
+	
 
 	/**
 	 * Get the play mode for the queue.
