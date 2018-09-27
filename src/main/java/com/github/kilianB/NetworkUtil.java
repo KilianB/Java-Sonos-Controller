@@ -83,4 +83,28 @@ public class NetworkUtil {
 		}
 		return sb.toString();
 	}
+	
+	public static String collectSocketWithTimeout(Socket s, int msTimeout) throws IOException {
+		
+		int oldTimeout = s.getSoTimeout();
+		
+		s.setSoTimeout(msTimeout);
+		
+		InputStream is = s.getInputStream();
+		
+		StringBuilder sb = new StringBuilder();
+			
+		try {
+			while(true) {
+				sb.append((char)is.read());
+			}
+		}catch(java.net.SocketTimeoutException io) {}
+		
+		s.setSoTimeout(oldTimeout);
+		
+		return sb.toString();
+		
+		
+	}
+	
 }

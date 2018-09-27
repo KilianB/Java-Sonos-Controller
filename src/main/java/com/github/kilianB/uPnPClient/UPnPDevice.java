@@ -464,8 +464,8 @@ public class UPnPDevice {
 		try {
 			socket.setSoTimeout(300);
 
-			String event = NetworkUtil.collectSocket(socket);
-
+			String event = NetworkUtil.collectSocketWithTimeout(socket,100);
+			
 			// Send aknowledgment
 			OutputStream output = socket.getOutputStream();
 			// Unescape xml
@@ -530,12 +530,11 @@ public class UPnPDevice {
 
 			} catch (JDOMException e) {
 				output.write(BAD_REQUEST_MESSAGE);
+				System.out.println("Malformed answer : " + bodyContent + "\n" + event);
 				output.flush();
 				socket.getInputStream().close();
 				output.close();
 				socket.close();
-
-				System.out.println("ERROR");
 				LOGGER.severe(e.toString());
 			}
 		} catch (IOException e) {
