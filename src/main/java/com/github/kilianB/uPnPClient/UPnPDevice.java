@@ -296,9 +296,6 @@ public class UPnPDevice {
 				ScheduledFuture<?> eventResubscription = scheduler.scheduleAtFixedRate(new Runnable() {
 					@Override
 					public void run() {
-
-						System.out.println("Future scheduled");
-
 						try {
 							renewSubscription(subscription);
 						} catch (IOException e) {

@@ -62,9 +62,13 @@ public class ParserHelper {
      */
 	public static int formatedTimestampToSeconds(String durationAsString) {
 
-		String[] parts = durationAsString.split(":");
-
-		return Integer.parseInt(parts[0]) * 3600 + Integer.parseInt(parts[1]) * 60 + Integer.parseInt(parts[2]);
+		if(!durationAsString.isEmpty()) {
+			String[] parts = durationAsString.split(":");
+			return Integer.parseInt(parts[0]) * 3600 + Integer.parseInt(parts[1]) * 60 + Integer.parseInt(parts[2]);
+		}else {
+			return 0;
+		}
+		
 	}
 
 	/**

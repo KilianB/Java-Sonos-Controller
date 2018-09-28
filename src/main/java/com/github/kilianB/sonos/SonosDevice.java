@@ -1035,6 +1035,14 @@ public class SonosDevice {
 		return "http://" + ip + ":1400" + baseURL; 
 	}
 	
+	/**
+	 * Shuts down all non daemon threads associated with this device after registering
+	 * event handlers. This will lead to jvm being able to orderly shutdown.
+	 */
+	public void deinit() {
+		uPnPDevice.deinit();
+	}
+	
 	private static final Logger LOGGER = Logger.getLogger(SonosDevice.class.getName());
 
 }

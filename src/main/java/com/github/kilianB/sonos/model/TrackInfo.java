@@ -26,6 +26,10 @@ public class TrackInfo {
 		return queueIndex;
 	}
 
+	/**
+	 * The song lenght in seconds
+	 * @return the song duration in seconds
+	 */
 	public int getDuration() {
 		return duration;
 	}
@@ -34,6 +38,10 @@ public class TrackInfo {
 		return ParserHelper.secondsToFormatedTimestamp(duration);
 	}
 
+	/**
+	 * Return the current song position in seconds
+	 * @return
+	 */
 	public int getPosition() {
 		return position;
 	}

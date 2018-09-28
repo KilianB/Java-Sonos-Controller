@@ -95,9 +95,10 @@ public class NetworkUtil {
 		StringBuilder sb = new StringBuilder();
 			
 		try {
-			while(true) {
+			while(!s.isClosed()) {
 				sb.append((char)is.read());
 			}
+		//TODO expensive each read an exception is thrown
 		}catch(java.net.SocketTimeoutException io) {}
 		
 		s.setSoTimeout(oldTimeout);
