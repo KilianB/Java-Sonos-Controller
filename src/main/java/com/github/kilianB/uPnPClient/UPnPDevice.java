@@ -17,10 +17,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 import org.apache.commons.text.StringEscapeUtils;
@@ -28,6 +31,8 @@ import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import com.github.kilianB.DaemonThread;
+import com.github.kilianB.DaemonThreadFactory;
 import com.github.kilianB.NetworkUtil;
 import com.github.kilianB.StringUtil;
 import com.github.kilianB.sonos.ParserHelper;
@@ -71,9 +76,11 @@ public class UPnPDevice {
 	/**
 	 * Lookup map holding all currently subscribed to event subscriptions. They are
 	 * used to gracefully shut down the subscriptions upon jvm exit or during
-	 * unsubscription of individual subscriptions. <p> Sid -> subscription
+	 * unsubscription of individual subscriptions.
+	 * <p>
+	 * Sid -> subscription
 	 */
-	private HashMap<String, Subscription> subscriptions = new HashMap<String, Subscription>();
+	private ConcurrentHashMap<String, Subscription> subscriptions = new ConcurrentHashMap<String, Subscription>();
 
 	/**
 	 * Handle event re-subscriptions
@@ -83,10 +90,8 @@ public class UPnPDevice {
 	/**
 	 * Creates a UPnP Device based on the supplied inetAddress.
 	 * 
-	 * @param inetAddress
-	 *            The address of the UPnP device
-	 * @param deviceInfo
-	 *            Information retrieved durin Simple Device Discovery
+	 * @param inetAddress The address of the UPnP device
+	 * @param deviceInfo  Information retrieved durin Simple Device Discovery
 	 */
 	public UPnPDevice(InetAddress inetAddress, HashMap<String, String> deviceInfo) {
 		this.deviceAddress = inetAddress;
@@ -114,7 +119,8 @@ public class UPnPDevice {
 	 * @return Field value contains a URL to the UPnP description of the root
 	 *         device. Normally the host portion contains a literal IP address
 	 *         rather than a domain name in unmanaged networks
-	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
+	 * @see <a href=
+	 *      "http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
 	 */
 	public String getLocation() {
 		return deviceInfo.get("LOCATION");
@@ -132,7 +138,8 @@ public class UPnPDevice {
 	 * For example, control points implementing UDA version 1.0 will be able to
 	 * interoperate with devices implementing UDA version 1.1.
 	 * 
-	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
+	 * @see <a href=
+	 *      "http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
 	 * @return The server property
 	 */
 	public String getServer() {
@@ -145,7 +152,8 @@ public class UPnPDevice {
 	 * ST header field that was sent in the request. In some cases, the device MUST
 	 * send multiple response messages as follows.
 	 * 
-	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
+	 * @see <a href=
+	 *      "http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
 	 * @return The st field value
 	 */
 	public String getSearchTarget() {
@@ -155,16 +163,17 @@ public class UPnPDevice {
 	/**
 	 * Get the Unique Service Name property of this UPnP Device.
 	 * 
-	 * @see <a href="http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
+	 * @see <a href=
+	 *      "http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf">UPnP-arch-DeviceArchitecture-v1.1</a>
 	 * @return The usn field value
 	 */
 	public String getUniqueServiceName() {
 		return deviceInfo.get("USN");
 	}
 
-
 	/**
 	 * Return the content of a field retrieved during SimpleDeviceDiscovery
+	 * 
 	 * @param fieldID The id of the header field
 	 * @return the content of the field
 	 */
@@ -173,8 +182,8 @@ public class UPnPDevice {
 	}
 
 	/**
-	 * @return  an unmodifiable map of the device info key value pairs received during
-	 * discovery
+	 * @return an unmodifiable map of the device info key value pairs received
+	 *         during discovery
 	 */
 	public Map<String, String> getFields() {
 		return Collections.unmodifiableMap(deviceInfo);
@@ -182,10 +191,12 @@ public class UPnPDevice {
 
 	/**
 	 * Subscribe to a upnp event with a default resubscription interval of 1 hour
-	 * @param eventHandler The event handler being called once the device sends an event
-	 * @param servicePath The service path of the event
+	 * 
+	 * @param eventHandler The event handler being called once the device sends an
+	 *                     event
+	 * @param servicePath  The service path of the event
 	 * @return the service identifier used to uniquely identify the subscription
-	 * @throws IOException IOException thrown during subscription 
+	 * @throws IOException IOException thrown during subscription
 	 */
 	public String subscribe(UPnPEventListener eventHandler, String servicePath) throws IOException {
 		return subscribe(eventHandler, servicePath, 3600);
@@ -196,23 +207,23 @@ public class UPnPDevice {
 	/**
 	 * Subscribe to an UPnP Event
 	 * 
-	 * @param eventHandler
-	 *            The event handler being called once the device sends an event
-	 * @param servicePath
-	 *            The service path of the event
-	 * @param renewalPeriod
-	 *            Renewal period in seconds. If {@literal >} 0 a renewal request will be send
-	 *            before the subscription expires. Usual periods are around 1 hour.
-	 *            Has to be {@literal >} 60 secs Else the subscription will timeout.
-	 * @return the service identifier used to uniquely identify the subscription or null if invalid arguments were supplied
+	 * @param eventHandler  The event handler being called once the device sends an
+	 *                      event
+	 * @param servicePath   The service path of the event
+	 * @param renewalPeriod Renewal period in seconds. If {@literal >} 0 a renewal
+	 *                      request will be send before the subscription expires.
+	 *                      Usual periods are around 1 hour. Has to be {@literal >}
+	 *                      60 secs Else the subscription will timeout.
+	 * @return the service identifier used to uniquely identify the subscription or
+	 *         null if invalid arguments were supplied
 	 * @throws IOException Exception thrown during subscription
 	 */
-	public String  subscribe(UPnPEventListener eventHandler, String servicePath, int renewalPeriod) throws IOException {
+	public String subscribe(UPnPEventListener eventHandler, String servicePath, int renewalPeriod) throws IOException {
 
 		Subscription subscription = new Subscription(eventHandler, servicePath, renewalPeriod);
 
 		LOGGER.fine(MessageFormat.format("Subscribe to {0}", servicePath));
-		
+
 		/*
 		 * SUBSCRIBE publisher path HTTP/1.1 HOST: publisher host:publisher port
 		 * USER-AGENT: OS/version UPnP/1.1 product/version CALLBACK: <delivery URL> NT:
@@ -305,13 +316,13 @@ public class UPnPDevice {
 			return token;
 		}
 		// TODO timeout in case subscription failed
-		
-		
+
 	}
 
 	/**
-	 * Initialize the server socket to be able to receive UPNP Event callbacks.
-	 * Only need to be called once
+	 * Initialize the server socket to be able to receive UPNP Event callbacks. Only
+	 * need to be called once
+	 * 
 	 * @throws IOException during socket creation.
 	 */
 	private void initSubscription() throws IOException {
@@ -326,8 +337,9 @@ public class UPnPDevice {
 	}
 
 	/**
-	 * Issue a renewal request 
-	 * @param subscription	Subscription which will be renewed
+	 * Issue a renewal request
+	 * 
+	 * @param subscription Subscription which will be renewed
 	 * @throws IOException IOException thrown when device can not be reached
 	 */
 	private void renewSubscription(Subscription subscription) throws IOException {
@@ -336,7 +348,7 @@ public class UPnPDevice {
 		/* Create the search request */
 		StringBuilder eventRenewalMessage = new StringBuilder("SUBSCRIBE ").append(subscription.getServicePath())
 				.append(" HTTP/1.1\r\n").append("HOST: ").append(deviceAddress.getHostAddress() + ":1400")
-				.append("\r\n")																								 // 1.1
+				.append("\r\n") // 1.1
 				.append("SID: ").append(subscription.getToken()).append("r\n")
 				.append("TIMEOUT: Second-" + subscription.getRenewalInterval()).append("\r\n\r\n");
 
@@ -377,7 +389,8 @@ public class UPnPDevice {
 		if (subscriptions.containsKey(sid)) {
 			return unsubscribe(subscriptions.get(sid));
 		} else {
-			LOGGER.warning(MessageFormat.format("Could not unsubscribe from {0} because no subscription was found fitting this criteria.", sid));
+			LOGGER.warning(MessageFormat.format(
+					"Could not unsubscribe from {0} because no subscription was found fitting this criteria.", sid));
 			return false;
 		}
 	}
@@ -389,7 +402,8 @@ public class UPnPDevice {
 		if (subscriptionEntry.isPresent()) {
 			return unsubscribe(subscriptionEntry.get().getValue());
 		} else {
-			LOGGER.warning(MessageFormat.format("Could not unsubscribe from {0} because no subscription was found fitting this criteria.",
+			LOGGER.warning(MessageFormat.format(
+					"Could not unsubscribe from {0} because no subscription was found fitting this criteria.",
 					servicePath));
 			return false;
 		}
@@ -435,7 +449,7 @@ public class UPnPDevice {
 	 * time an event occurs. Therefore, the socket is only valid for one event and
 	 * can be safely discarded afterwards
 	 */
-	private Thread uPnPEventSocketListener = new Thread(() -> {
+	private Thread uPnPEventSocketListener = new DaemonThread(() -> {
 
 		while (!Thread.interrupted() && !eventCallbackSocket.isClosed()) {
 			// Await new events
@@ -444,28 +458,34 @@ public class UPnPDevice {
 				new Thread(() -> {
 					parseUPnPEvent(eventSocket);
 				}).start();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (Exception exception) {
+			}catch (IOException e) {
+				
+				if(e instanceof java.net.SocketException && e.getMessage().contains("closed")) {
+					//Disregard. socket closed
+					LOGGER.info("UPnPEvent socket closed");
+				}else {
+					e.printStackTrace();
+				}
+			} 
+			catch (Exception exception) {
 				// Bad practice but catch all issues like null pointer exceptions
 				// which can unexpacetly happen during parsing if udp sends a bad request.
 				// Prevent the entire
 				// callback thread to break.
-				LOGGER.severe(MessageFormat.format("An error occured during upnp event callback. Trying to recover: {0}", exception));
+				LOGGER.severe(MessageFormat
+						.format("An error occured during upnp event callback. Trying to recover: {0}", exception));
 			}
 		}
 
-		System.out.println("Event callback thread done");
-
-	});
+	}, "UPnP Event Socket Listener");
 
 	private void parseUPnPEvent(Socket socket) {
 
 		try {
 			socket.setSoTimeout(300);
 
-			String event = NetworkUtil.collectSocketWithTimeout(socket,100);
-			
+			String event = NetworkUtil.collectSocketWithTimeout(socket, 200);
+
 			// Send aknowledgment
 			OutputStream output = socket.getOutputStream();
 			// Unescape xml
@@ -475,74 +495,94 @@ public class UPnPDevice {
 
 			LOGGER.fine("Event: " + event);
 
-			int indexXMLStart = event.indexOf("<e:propertyset");
+			if(event.length() > 0) {
+				int indexXMLStart = event.indexOf("<e:propertyset");
 
-			String headers = event.substring(0, indexXMLStart);
-			String bodyContent = event.substring(indexXMLStart);
-			String httpHeader = ParserHelper.findOne("(.*)\\R", headers);
-			String host = ParserHelper.findOne("HOST: (.*)", headers);
-			String connection = ParserHelper.findOne("CONNECTION: (.*)", headers);
-			int contentLength = Integer.parseInt(ParserHelper.findOne("CONTENT-LENGTH: (.*)", headers));
-			String nt = ParserHelper.findOne("NT: (.*)", headers);
-			String nts = ParserHelper.findOne("NTS: (.*)", headers);
-			String sid = ParserHelper.findOne("SID: (.*)", headers);
-			String transferEncoding = ParserHelper.findOne("TRANSFER-ENCODING: \"(.*)\"", headers);
-			int seq = Integer.parseInt(ParserHelper.findOne("SEQ: (.*)", headers));
+				String headers = event.substring(0, indexXMLStart);
+				String bodyContent = event.substring(indexXMLStart);
+				String httpHeader = ParserHelper.findOne("(.*)\\R", headers);
+				String host = ParserHelper.findOne("HOST: (.*)", headers);
+				String connection = ParserHelper.findOne("CONNECTION: (.*)", headers);
+				int contentLength = Integer.parseInt(ParserHelper.findOne("CONTENT-LENGTH: (.*)", headers));
+				String nt = ParserHelper.findOne("NT: (.*)", headers);
+				String nts = ParserHelper.findOne("NTS: (.*)", headers);
+				String sid = ParserHelper.findOne("SID: (.*)", headers);
+				String transferEncoding = ParserHelper.findOne("TRANSFER-ENCODING: \"(.*)\"", headers);
+				int seq = Integer.parseInt(ParserHelper.findOne("SEQ: (.*)", headers));
 
-			// Get the corresponding subscription object
-			Subscription subscription = subscriptions.get(sid);
+				// Get the corresponding subscription object
+				Subscription subscription = subscriptions.get(sid);
 
-			if (subscription == null) {
-				LOGGER.severe("Received UPnP event does not match any expected sid");
-				return;
-			}
-
-			// Validation
-
-			if (seq <= subscription.getSequenceCount()) {
-				LOGGER.warning("UPnP Event arrived in wrong order.");
-			} else {
-				subscription.setSequenceCount(seq);;
-			}
-
-			// Chunked message?
-			if (transferEncoding.contains("chunked")) {
-				LOGGER.warning("implement chunk decoding");
-			}
-
-			SAXBuilder saxBuilder = new SAXBuilder();
-			try {
-				Document xml = saxBuilder.build(new StringReader(bodyContent));
-				output.write(ACKNOWLEDGEMENT_MESSAGE);
-				socket.getInputStream().close();
-				output.close();
-				socket.close();
-
-				if (seq == 0) {
-					UPnPEvent upnpEvent = new UPnPEvent(httpHeader, host, connection, contentLength, nt, nts, sid, seq,
-							xml);
-					subscription.getEventListener().initialEventReceived(upnpEvent);
-				} else {
-					UPnPEvent upnpEvent = new UPnPEvent(httpHeader, host, connection, contentLength, nt, nts, sid, seq,
-							xml);
-					subscription.getEventListener().eventReceived(upnpEvent);
+				if (subscription == null) {
+					LOGGER.severe("Received UPnP event does not match any expected sid");
+					return;
 				}
 
-			} catch (JDOMException e) {
+				// Validation
+
+				if (seq <= subscription.getSequenceCount()) {
+					LOGGER.warning("UPnP Event arrived in wrong order.");
+				} else {
+					subscription.setSequenceCount(seq);
+					;
+				}
+
+				// Chunked message?
+				if (transferEncoding.contains("chunked")) {
+					LOGGER.warning("implement chunk decoding");
+				}
+
+				SAXBuilder saxBuilder = new SAXBuilder();
+				try {
+					Document xml = saxBuilder.build(new StringReader(bodyContent));
+					output.write(ACKNOWLEDGEMENT_MESSAGE);
+					socket.getInputStream().close();
+					output.close();
+					socket.close();
+
+					if (seq == 0) {
+						UPnPEvent upnpEvent = new UPnPEvent(httpHeader, host, connection, contentLength, nt, nts, sid, seq,
+								xml);
+						subscription.getEventListener().initialEventReceived(upnpEvent);
+					} else {
+						UPnPEvent upnpEvent = new UPnPEvent(httpHeader, host, connection, contentLength, nt, nts, sid, seq,
+								xml);
+						subscription.getEventListener().eventReceived(upnpEvent);
+					}
+
+				} catch (JDOMException e) {
+					output.write(BAD_REQUEST_MESSAGE);
+					System.out.println("Malformed answer : " + bodyContent + "\n" + event);
+					output.flush();
+					socket.getInputStream().close();
+					output.close();
+					socket.close();
+					LOGGER.severe(e.toString());
+				}
+			}else {
+				LOGGER.warning("Dropped UDP package. Try again");
 				output.write(BAD_REQUEST_MESSAGE);
-				System.out.println("Malformed answer : " + bodyContent + "\n" + event);
 				output.flush();
 				socket.getInputStream().close();
 				output.close();
 				socket.close();
-				LOGGER.severe(e.toString());
 			}
+			
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Shutdown non daemon threads ot the upnp device
+	 */
+	public void deinit() {
+		scheduler.shutdownNow();
+	}
+	
 	private Thread handleShutdown = new Thread(() -> {
+
 		if (eventCallbackSocket != null && !eventCallbackSocket.isClosed()) {
 
 			Iterator<Entry<String, Subscription>> keyIter = subscriptions.entrySet().iterator();
@@ -553,20 +593,21 @@ public class UPnPDevice {
 			}
 			try {
 				eventCallbackSocket.close();
+				scheduler.shutdownNow();
 			} catch (IOException e) {
-			}
 
+			}
 		}
-	});
+	}, "UPnP Shutdown");
 
 	/**
 	 * Creates a dummy device pointing to the supplied ip address. This device can
 	 * be used to subscribe to events but does not contain information usually
 	 * transmitted via the SSDP advertisement.
 	 * 
-	 * @param ip	Ip of the fake device
-	 * @return	A UPnPDevice pointing to the ip
-	 * @throws UnknownHostException	If the ip is not well formated or valid
+	 * @param ip Ip of the fake device
+	 * @return A UPnPDevice pointing to the ip
+	 * @throws UnknownHostException If the ip is not well formated or valid
 	 */
 	public static UPnPDevice createDummyDevice(String ip) throws UnknownHostException {
 		return new UPnPDevice(InetAddress.getByName(ip), null);
