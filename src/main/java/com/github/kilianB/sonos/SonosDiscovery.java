@@ -46,6 +46,24 @@ public class SonosDiscovery {
         for (UPnPDevice device : source) { output.add(new SonosDevice(device)); }
         return Collections.unmodifiableList(output);
     }
+    
+    /**
+     * Discover all SONOS speakers on network using SSDP (Simple Service Discovery Protocol).
+     * @param scanDuration The number of seconds to wait while scanning for devices.
+     * @return List of SONOS speakers
+     * @throws IOException network exception during device discovery
+     */
+    public static List<SonosDevice> discover(int scanDuration, SonosDeviceFoundListener callback) throws IOException {
+    	ArrayList<SonosDevice> output = new ArrayList<SonosDevice>();
+    	List<UPnPDevice> source =  SimpleDeviceDiscovery.discoverDevices(1, scanDuration,SONOS_URN,
+        			(upnpDevice)->{
+        				SonosDevice sonosDevice = new SonosDevice(upnpDevice);
+        				output.add(sonosDevice);
+        				callback.deviceFound(sonosDevice);
+        			}
+        		);
+        return Collections.unmodifiableList(output);
+    }
 
     /**
      * Discover one SONOS speakers on network using SSDP (Simple Service Discovery Protocol).
@@ -118,5 +136,10 @@ public class SonosDiscovery {
             } catch (SonosControllerException e) { /* ignored */ }
         }
         return null;
+    }
+    
+    @FunctionalInterface
+    public interface SonosDeviceFoundListener{
+    	void deviceFound(SonosDevice device);
     }
 }

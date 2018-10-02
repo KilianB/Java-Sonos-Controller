@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 	every time we append a listener.
 
 ### Added
+- Enqueue audio at a given position in the queue instead of just the end
+- Asynch device disovery with callback.
 - Changelog
 - Demo example
 - deprecated method to get the underlying upnp device

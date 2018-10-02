@@ -196,8 +196,10 @@ public class SonosDevice {
 		if (metadata != null) {
 			metadataString = metadata.toDIDL();
 		}
+		System.out.println("Play uri: " + uri);
 		CommandBuilder.transport("SetAVTransportURI").put("InstanceID", "0").put("CurrentURI", uri)
 				.put("CurrentURIMetaData", metadataString).executeOn(this.ip);
+		
 		this.play();
 	}
 
@@ -340,7 +342,27 @@ public class SonosDevice {
 				.put("EnqueuedURIMetaData", metadataString).put("DesiredFirstTrackNumberEnqueued", "0")
 				.put("EnqueueAsNext", "1").executeOn(this.ip);
 	}
+	
 
+	/**
+	 *  Adds a given track to the queue.
+	 * @param queueIndex the index of the queue the track to shall be inserted
+	 * @param uri
+	 * 	URI of a stream to be played.
+	 * @param metadata The track metadata to show in the player (DIDL format).
+	 * @throws IOException IOException during HTTP Client operation . Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
+	 */
+	public void addToQueue(int queueIndex, String uri, TrackMetadata metadata) throws IOException, SonosControllerException {
+		String metadataString = "";
+		if (metadata != null) {
+			metadataString = metadata.toDIDL();
+		}
+		CommandBuilder.transport("AddURIToQueue").put("InstanceID", "0").put("EnqueuedURI", uri)
+		.put("EnqueuedURIMetaData", metadataString).put("DesiredFirstTrackNumberEnqueued", Integer.toString(queueIndex))
+		.put("EnqueueAsNext", "0").executeOn(this.ip);
+	}
+	
 	/**
 	 * Remove a track from the queue.
 	 * 

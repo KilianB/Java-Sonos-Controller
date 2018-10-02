@@ -68,10 +68,11 @@ public class SimpleDeviceDiscovery {
 	 *            The number of seconds waited before the search is aborted
 	 * @param searchTarget
 	 *            The search target to select specific devices or services
+	 * @param callback event handler called once a device was found
 	 * @return discovered devices
 	 * @throws IOException	 if an I/O error occurs.
 	 */
-	public static List<UPnPDevice> discoverDevices(int loadBalancingDelay, int timeout, String searchTarget)
+	public static List<UPnPDevice> discoverDevices(int loadBalancingDelay, int timeout, String searchTarget,UPnPDeviceFoundListener callback)
 			throws IOException {
 
 		ArrayList<UPnPDevice> devicesFound = new ArrayList<UPnPDevice>();
@@ -105,7 +106,15 @@ public class SimpleDeviceDiscovery {
 
 			HashMap<String, String> deviceInfo = parseUpnpNotifyAndSearchMessage(new String(incommingPacket.getData()));
 
-			devicesFound.add(new UPnPDevice(incommingPacket.getAddress(), deviceInfo));
+			UPnPDevice device = new UPnPDevice(incommingPacket.getAddress(), deviceInfo);
+			devicesFound.add(device);
+			
+			if(callback != null) {
+				new Thread( ()->{
+					callback.upnpDeviceFound(device);
+				}).start();
+			}
+			
 			/**
 			 * if there is an error with the search request (such as an invalid field value
 			 * in the MAN header field, a missing MX header field, or other malformed
@@ -126,7 +135,26 @@ public class SimpleDeviceDiscovery {
 
 		return devicesFound;
 	}
+	
+	/**
+	 * 
+	 * @param loadBalancingDelay
+	 *            specifies a range, devices may delay their response to lessen
+	 *            load. may be in the range of [1-5]s
+	 * @param timeout
+	 *            The number of seconds waited before the search is aborted
+	 * @param searchTarget
+	 *            The search target to select specific devices or services
+	 * @return discovered devices
+	 * @throws IOException	 if an I/O error occurs.
+	 */
+	public static List<UPnPDevice> discoverDevices(int loadBalancingDelay, int timeout, String searchTarget)
+			throws IOException {
+		return discoverDevices(loadBalancingDelay,timeout,searchTarget,null);
+	}
 
+
+	
 	/**
 	 * Return the first device discovered matching the supplied search target. This
 	 * method will wait a maximum of 2 seconds before aborting the search.
@@ -234,6 +262,12 @@ public class SimpleDeviceDiscovery {
 			parsedKeyValues.put(matcher.group(1), matcher.group(2));
 		}
 		return parsedKeyValues;
+	}
+	
+	public interface UPnPDeviceFoundListener{
+		
+		void upnpDeviceFound(UPnPDevice device);
+		
 	}
 
 }
