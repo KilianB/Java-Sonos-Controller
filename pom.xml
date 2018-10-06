@@ -51,10 +51,11 @@
 				<configuration>
 					<source>10</source>
 					<target>10</target>
-					<!-- exclude for deployment
+					<!-- exclude for deployment  
 					<excludes>
-						<exclude>**/kilianB/examples/**</exclude>
-					</excludes> -->
+						<exclude>**/example/**</exclude>
+					</excludes>
+					-->
 				</configuration>
 			</plugin>
 			<plugin>
@@ -77,9 +78,7 @@
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
 				<configuration>
-					<excludes>
-						<exclude>**/kilianB/examples/**</exclude>
-					</excludes>
+					<excludePackageNames>*.example</excludePackageNames>
 				</configuration>
 				<executions>
 					<execution>
@@ -93,9 +92,7 @@
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<configuration>
-					<excludes>
-						<exclude>**/kilianB/examples/**</exclude>
-					</excludes>
+					<excludePackageNames>*.example</excludePackageNames>
 				</configuration>
 				<executions>
 					<execution>
@@ -136,7 +133,7 @@
 			<version>2.0.6</version>
 		</dependency>
 
-		<!-- Only for demo. Remove from deployed jar -->
+		<!-- Only for demo. Remove from deployed jar  -->
 
 		<dependency>
 			<groupId>com.jfoenix</groupId>
@@ -168,6 +165,7 @@
 			<version>1.4.197</version>
 		</dependency>
 
+		
 		<!-- Database full text search. Update to v 7.5 after testing -->
 
 		<!-- Currently not working with old lucene version <dependency> <groupId>org.apache.lucene</groupId> 

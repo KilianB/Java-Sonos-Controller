@@ -61,7 +61,6 @@ public class SonosDiscovery {
 	 * 
 	 * @param scanDuration The number of seconds to wait while scanning for devices.
 	 * @param callback	listener to be notified about found devices
-	 * @return List of SONOS speakers
 	 */
 	public static void discoverAsynch(int scanDuration, SonosDeviceFoundListener callback){
 		new Thread(()-> {

@@ -40,7 +40,7 @@ public class TrackInfo {
 
 	/**
 	 * Return the current song position in seconds
-	 * @return
+	 * @return the position of the song in seconds
 	 */
 	public int getPosition() {
 		return position;
@@ -82,7 +82,7 @@ public class TrackInfo {
 	/**
 	 * Return true if the track info object points at a non present track.
 	 * this.getCurrentTrackInfo() will return an object like this if the queue is empty.
-	 * @return
+	 * @return true if no field of the track info is set, false otherwise
 	 */
 	public boolean isEmpty() {
 		return (this.queueIndex == 0 && this.duration == 0 && this.position == 0 && this.uri.isEmpty());

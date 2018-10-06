@@ -205,7 +205,7 @@ public class SonosDevice {
 	 * @param queueIndex The index of the item in the queue. Starting at 1
 	 * @throws IOException              IOException during HTTP Client operation .
 	 *                                  Sending the command.
-	 * @throws IllegalArgumentException if queue index < 1
+	 * @throws IllegalArgumentException if queue index {@literal <} 1
 	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	
