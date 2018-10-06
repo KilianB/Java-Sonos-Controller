@@ -1,25 +1,35 @@
-package com.github.kilianB.example.player;
+package com.github.kilianB.example.localFilePlayer;
 
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import com.github.kilianB.example.player.fileHandling.NetworkFileProvider;
+import com.github.kilianB.example.localFilePlayer.fileHandling.DatabaseManager;
+import com.github.kilianB.example.localFilePlayer.fileHandling.MusicFileIndexer;
+import com.github.kilianB.example.localFilePlayer.fileHandling.NetworkFileProvider;
+import com.github.kilianB.example.localFilePlayer.fileHandling.exception.MusicProviderInternalException;
+import com.github.kilianB.example.localFilePlayer.fileHandling.model.Album;
+import com.github.kilianB.example.localFilePlayer.fileHandling.model.IndexedFolderData;
+import com.github.kilianB.example.localFilePlayer.fileHandling.model.Song;
 import com.github.kilianB.exception.SonosControllerException;
 import com.github.kilianB.sonos.ParserHelper;
 import com.github.kilianB.sonos.SonosDevice;
 import com.github.kilianB.sonos.SonosDiscovery;
 import com.github.kilianB.sonos.listener.SonosEventAdapter;
 import com.github.kilianB.sonos.listener.SonosEventListener;
-import com.github.kilianB.sonos.model.PlayMode;
 import com.github.kilianB.sonos.model.PlayState;
 import com.github.kilianB.sonos.model.QueueEvent;
 import com.github.kilianB.sonos.model.TrackInfo;
 import com.github.kilianB.sonos.model.TrackMetadata;
+import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeTableColumn;
 import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
@@ -31,19 +41,17 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TreeItem;
@@ -52,7 +60,12 @@ import javafx.scene.control.TreeTableRow;
 import javafx.scene.control.TreeTableView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.DirectoryChooser;
@@ -94,16 +107,20 @@ public class DemoPlayerController {
 	@FXML
 	private JFXTreeTableView<IndexDirectoryModel> indexedDirectories;
 
+	@FXML
+	private JFXTextField searchLocalMusic;
+
 	private Image forwardImg;
 	private Image forwardImgHoover;
 	private Image backImg;
 	private Image backImgHoover;
 	private Image playImg;
 	private Image playImgHoover;
-	private Image stopImg;
-	private Image stopImgHoover;
+//	private Image stopImg;
+//	private Image stopImgHoover;
 	private Image pauseImg;
 	private Image pauseImgHoover;
+	private Image reload;
 
 	private Image curPlayPauseImage;
 	private Image curPlayPauseImageHoover;
@@ -114,7 +131,7 @@ public class DemoPlayerController {
 
 	@FXML
 	private JFXTreeTableView<TrackMetadataModel> playlistTable;
-	
+
 	@FXML
 	private JFXTreeTableView<LocalTrackModel> musicLibraryView;
 
@@ -129,25 +146,30 @@ public class DemoPlayerController {
 	private String currentZoneName = "";
 	private VBox currentGroupWrapper;
 	private SonosEventListener curentListener;
-	
-	
+
 	private ObservableList<TrackMetadataModel> currentPlaylistData = FXCollections.observableArrayList();
 	private ObservableList<IndexDirectoryModel> indexedDirectoryData = FXCollections.observableArrayList();
 	private ObservableList<LocalTrackModel> localMusicData = FXCollections.observableArrayList();
 
-	
-	
 	private NetworkFileProvider fileProvider;
+	private MusicFileIndexer fileIndexer;
+	private DatabaseManager db;
 
 	// Position slier animation.
 	private Timeline positionAnimation = new Timeline();
 
+	// Custom drag and drop action
+	private DataFormat dragTrackFormat = new DataFormat("com.github.kilianB.copyTrackModel");
+
 	// Settings
 	int directoryRowHeight = 35;
 
-	public DemoPlayerController(NetworkFileProvider fileProvider) {
+	public DemoPlayerController(NetworkFileProvider fileProvider, MusicFileIndexer fileIndexer, DatabaseManager db) {
 
 		this.fileProvider = fileProvider;
+		this.fileIndexer = fileIndexer;
+		this.db = db;
+
 		// TODO do this with a clipping oval and css coloring on transparent image. much
 		// much easier!
 		backImg = new Image(getClass().getResourceAsStream("icons/back.png"));
@@ -159,21 +181,45 @@ public class DemoPlayerController {
 		pauseImg = new Image(getClass().getResourceAsStream("icons/pause.png"));
 		pauseImgHoover = new Image(getClass().getResourceAsStream("icons/pauseHoover.png"));
 
-		stopImg = new Image(getClass().getResourceAsStream("icons/stop.png"));
-		stopImgHoover = new Image(getClass().getResourceAsStream("icons/stopHoover.png"));
+//		stopImg = new Image(getClass().getResourceAsStream("icons/stop.png"));
+//		stopImgHoover = new Image(getClass().getResourceAsStream("icons/stopHoover.png"));
 
 		forwardImg = new Image(getClass().getResourceAsStream("icons/next.png"));
 		forwardImgHoover = new Image(getClass().getResourceAsStream("icons/nextHoover.png"));
+
+		reload = new Image(getClass().getResourceAsStream("icons/reload.png"));
 
 		curPlayPauseImage = pauseImg;
 		curPlayPauseImageHoover = pauseImgHoover;
 
 		folderImg = new Image(getClass().getResourceAsStream("icons/folder.png"), directoryRowHeight / 2,
 				directoryRowHeight / 2, false, true);
+
+		// Map all folders
+
+		try {
+			List<IndexedFolderData> indexedFolder = db.getIndexedFolders();
+
+			for (IndexedFolderData indexed : indexedFolder)
+				fileProvider.mapFolder(new File(indexed.getFolderPath()));
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	@FXML
 	public void initialize() {
+
+		// Setup filtering
+		searchLocalMusic.textProperty().addListener((obs, old, newV) -> {
+			musicLibraryView.setPredicate((value) -> {
+				return (value.getValue().getTitle().get().contains(newV)
+						|| value.getValue().getAlbum().get().contains(newV));
+
+			});
+		});
 
 		// Handle the volume slider
 		volumeSlider.setMin(0);
@@ -213,24 +259,11 @@ public class DemoPlayerController {
 
 			File selectedDirectory = dirChooser.showDialog(addDirectoryBtn.getScene().getWindow());
 
-			if (selectedDirectory != null) {
-				
-				if(fileProvider.mapFolder(selectedDirectory,()->{
-					
-					//Callback add data 
-					localMusicData.clear();
-					
-					//fileProvider.getAllSongs();
-					
-					
-				})) {
-					indexedDirectoryData.add(new IndexDirectoryModel(selectedDirectory.getAbsolutePath(), 0, -1));
-				}
-				
-			
-			}
+			crawlDirectory(selectedDirectory);
 
 		});
+
+		updateIndexedLocation();
 
 		volumeImg.setImage(new Image(getClass().getResourceAsStream("icons/volume.png")));
 
@@ -251,11 +284,6 @@ public class DemoPlayerController {
 					currentlyActiveDevice.previous();
 				} catch (IOException | SonosControllerException e1) {
 					e1.printStackTrace();
-//					// This happens if we have repeat and try to playback the next song.
-//					// This works but throws an error. TODO properly reset index to 0
-//					if (!e1.getMessage().contains("UPnP Error 711")) {
-//						e1.printStackTrace();
-//					}
 				}
 			}
 		});
@@ -325,32 +353,80 @@ public class DemoPlayerController {
 
 			if (currentlyActiveDevice != null) {
 				try {
-					currentlyActiveDevice.next();
+					// Add after the current song
+					int curQueueIndex = currentlyActiveDevice.getCurrentTrackInfo().getQueueIndex();
+					
+					if(!currentlyActiveDevice.getQueue(curQueueIndex,1).isEmpty()) {
+						currentlyActiveDevice.next();
+					}else {
+						currentlyActiveDevice.playFromQueue(1);
+					}
+						
 				} catch (IOException | SonosControllerException e1) {
 					e1.printStackTrace();
-
-//					// This happens if we have repeat and try to playback the next song.
-//					// This works but throws an error. TODO properly reset index to 0
-//					if (!e1.getMessage().contains("UPnP Error 711")) {
-//						e1.printStackTrace();
-//					}
 				}
 			}
 		});
 
 		setupTreeTableView();
 
-		try {
-			devices = SonosDiscovery.discover(2);
+		populateIndexedMusicFiles();
 
-			for (int i = 0; i < devices.size(); i++) {
+		discoverSonosDevices();
+	}
+
+	/**
+	 * 
+	 */
+	private void updateIndexedLocation() {
+		try {
+			indexedDirectoryData.clear();
+			List<IndexedFolderData> indexFolders = db.getIndexedFolders();
+			for (IndexedFolderData indexedFolder : indexFolders) {
+				indexedDirectoryData.add(new IndexDirectoryModel(indexedFolder.getFolderPath(),
+						indexedFolder.getTracksIndexed(), indexedFolder.getLastIndexed().toLocalDateTime()));
+
+			}
+		} catch (SQLException e2) {
+			e2.printStackTrace();
+		}
+	}
+
+	/**
+	 * @param selectedDirectory
+	 */
+	private void crawlDirectory(File selectedDirectory) {
+		if (selectedDirectory != null) {
+			fileIndexer.crawlAsynch(selectedDirectory.toPath(), (filesIndexed) -> {
+				if (fileProvider.mapFolder(selectedDirectory)) {
+					// Callback add data
+					indexedDirectoryData.add(new IndexDirectoryModel(selectedDirectory.getAbsolutePath(), filesIndexed,
+							LocalDateTime.now()));
+
+				} else {
+					// Reindexed maybe
+					// Update last indexed timestamp
+					updateIndexedLocation();
+				}
+				populateIndexedMusicFiles();
+			});
+
+		}
+	}
+
+	/**
+	 * 
+	 */
+	private void discoverSonosDevices() {
+		devices = new ArrayList<>();
+		SonosDiscovery.discoverAsynch(2, (sonosDevice) -> {
+			devices.add(sonosDevice);
+			Platform.runLater(() -> {
 				VBox groupWrapper = new VBox();
 				groupWrapper.getStyleClass().add("zoneToken");
 				groupWrapper.setAlignment(Pos.TOP_CENTER);
 
-				SonosDevice device = devices.get(i);
-
-				String zoneName = device.getRoomNameCached();
+				String zoneName = sonosDevice.getRoomNameCached();
 				ImageView thumbnailCurrentlyPlayed = new ImageView();
 				thumbnailCurrentlyPlayed.setFitHeight(45);
 				thumbnailCurrentlyPlayed.setFitWidth(45);
@@ -366,72 +442,107 @@ public class DemoPlayerController {
 				Label zoneNameLabel = new Label(zoneName);
 				zoneNameLabel.getStyleClass().add("zoneNameTitle");
 
+				Label trackLabel = new Label();
+
 				groupWrapper.getChildren().add(zoneNameLabel);
 
-				device.registerSonosEventListener(new SonosEventAdapter() {
+				sonosDevice.registerSonosEventListener(new SonosEventAdapter() {
 
 					@Override
 					public void playStateChanged(PlayState playState) {
+
+						if (sonosDevice == currentlyActiveDevice) {
+							if (playState.equals(PlayState.PLAYING)) {
+								positionAnimation.play();
+							}
+						}
 
 					}
 
 					@Override
 					public void trackChanged(TrackInfo currentTrack) {
 						String imgUri = currentTrack.getMetadata().getAlbumArtURI();
-						loadAndSetImage(imgUri, device, thumbnailCurrentlyPlayed);
+						loadAndSetImage(imgUri, sonosDevice, thumbnailCurrentlyPlayed);
 
-						if (device == currentlyActiveDevice) {
+						Platform.runLater(() -> {
+							String trackTitle = currentTrack.getMetadata().getTitle();
+							if (trackTitle.isEmpty()) {
+								trackTitle = "No Song selected";
+							}
+
+							trackLabel.setText(trackTitle);
+						});
+
+						if (sonosDevice == currentlyActiveDevice) {
 							boolean playing = true;
 							try {
-								playing = device.getPlayState().equals(PlayState.PLAYING);
+								playing = sonosDevice.getPlayState().equals(PlayState.PLAYING);
 							} catch (IOException | SonosControllerException e) {
 								e.printStackTrace();
 							}
+
+							// Traclinfo is not properly initialized when using the playUri command
+							// Therefore, we do not have access to the duration.
+
 							setupSongPositionSpliderAnimation(currentTrack, playing);
 						}
 					}
 
 					public void volumeChanged(int newVolume) {
 						// Check if the user isn't currently manipulating it himself!.
-						if (device == currentlyActiveDevice && !volumeSlider.isValueChanging()) {
+						if (sonosDevice == currentlyActiveDevice && !volumeSlider.isValueChanging()) {
 							volumeSlider.setValue(newVolume);
 						}
 					}
 
+					// TODO we will get these callbacks multiple times per event.
 					@Override
 					public void sonosDeviceConnected(String deviceName) {
-						// TODO
-						groupWrapper.setDisable(false);
+						try {
+							if (deviceName.equals(currentlyActiveDevice.getDeviceName())) {
+								groupWrapper.setDisable(false);
+							}
+						} catch (IOException | SonosControllerException e) {
+							e.printStackTrace();
+						}
+
 					}
 
 					@Override
 					public void sonosDeviceDisconnected(String deviceName) {
-						// TODO
-						groupWrapper.setDisable(true);
+						try {
+							if (deviceName.equals(currentlyActiveDevice.getDeviceName())) {
+								groupWrapper.setDisable(true);
+							}
+						} catch (IOException | SonosControllerException e) {
+							e.printStackTrace();
+						}
 					}
 
 					@Override
 					public void groupChanged(ArrayList<String> allDevicesInZone) {
-
 						// TODO
 					}
 				});
 
 				try {
-					TrackInfo track = device.getCurrentTrackInfo();
+					TrackInfo track = sonosDevice.getCurrentTrackInfo();
 
 					TrackMetadata trackMeta = track.getMetadata();
 
-					loadAndSetImage(trackMeta.getAlbumArtURI(), device, thumbnailCurrentlyPlayed);
+					loadAndSetImage(trackMeta.getAlbumArtURI(), sonosDevice, thumbnailCurrentlyPlayed);
 
 					String trackTitle = trackMeta.getTitle();
 					if (trackTitle.isEmpty()) {
 						trackTitle = "No Song selected";
 					}
 
-					groupWrapper.getChildren().add(new Label(trackTitle));
+					trackLabel.setText(trackTitle);
+					groupWrapper.getChildren().add(trackLabel);
 
 				} catch (SonosControllerException e1) {
+					e1.printStackTrace();
+				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
 
@@ -444,13 +555,33 @@ public class DemoPlayerController {
 				roomRoot.getChildren().add(groupWrapper);
 
 				// TODO change to arraylist and map by zone name?
-				sonosDeviceMap.put(zoneName, devices.get(i));
+				sonosDeviceMap.put(zoneName, sonosDevice);
+			});
+		});
+	}
 
+	/**
+	 * 
+	 */
+	private void populateIndexedMusicFiles() {
+		System.out.println("populated indexed music files");
+		localMusicData.clear();
+		List<Album> albums;
+		try {
+			albums = db.getAllAlbums();
+
+			for (Album album : albums) {
+				for (Song song : album.getTracks()) {
+					LocalTrackModel track = new LocalTrackModel(song.getTitle(), song.getMusicFile().toString(),
+							album.getTitle(), song.getTrackLength());
+					localMusicData.add(track);
+				}
 			}
 
-		} catch (IOException e1) {
-			e1.printStackTrace();
+		} catch (MusicProviderInternalException e2) {
+			e2.printStackTrace();
 		}
+
 	}
 
 	private void setupTreeTableView() {
@@ -548,9 +679,66 @@ public class DemoPlayerController {
 		// playlistTable.getColumns().add(path);
 		playlistTable.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
 
+		playlistTable.setOnDragOver(dragEvent -> {
+			// asContent(new DataFormat("copyTrackModel"))
+			if (dragEvent.getGestureSource() != playlistTable && dragEvent.getDragboard().hasContent(dragTrackFormat)) {
+				/* allow for both copying and moving, whatever user chooses */
+				dragEvent.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+			}
+			dragEvent.consume();
+		});
+
+		playlistTable.setOnDragDropped(dragEvent -> {
+			Dragboard db = dragEvent.getDragboard();
+			boolean success = false;
+
+			System.out.println("Drag done");
+			if (db.hasContent(dragTrackFormat)) {
+
+				System.out.println("Drag accepted: " + db.hasContent(dragTrackFormat));
+
+				try {
+					LocalTrackModel trackModel = (LocalTrackModel) db.getContent(dragTrackFormat);
+
+					System.out.println("Model: " + trackModel);
+					TrackMetadata meta = new TrackMetadata(trackModel.getTitle().get(), "", "",
+							trackModel.getAlbum().get(), "");
+					System.out.println("Meta");
+					try {
+						String playbackPath = "http://" + fileProvider.getMapPrefix() + trackModel.getPath().get();
+
+						// Alternativly
+						// currentlyActiveDevice.playUri(playbackPath, meta);
+						// Add after the current song
+						int curQueueIndex = currentlyActiveDevice.getCurrentTrackInfo().getQueueIndex();
+
+						currentlyActiveDevice.addToQueue(curQueueIndex + 1, playbackPath, meta);
+						if (!currentlyActiveDevice.getPlayState().equals(PlayState.PLAYING)) {
+							currentlyActiveDevice.playFromQueue(curQueueIndex + 1);
+						}
+						// We will get a notification about queue update but it might take a few
+						// seconds. Speed it up
+						rebuildQueueList();
+					} catch (IOException | SonosControllerException e1) {
+						e1.printStackTrace();
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				success = true;
+			}
+			/*
+			 * let the source know whether the string was successfully transferred and used
+			 */
+			dragEvent.setDropCompleted(success);
+
+			dragEvent.consume();
+		});
+
 		// Directory table
 
-		TreeTableColumn<IndexDirectoryModel, String> path = new JFXTreeTableColumn("Path");
+		TreeTableColumn<IndexDirectoryModel, String> path = new JFXTreeTableColumn<>("Path");
 
 		path.setCellValueFactory(value -> {
 			return value.getValue().getValue().getFilePath();
@@ -582,16 +770,35 @@ public class DemoPlayerController {
 			return value.getValue().getValue().getSongsFound().asObject();
 		});
 
-		TreeTableColumn<IndexDirectoryModel, Integer> lastIndexed = new JFXTreeTableColumn("Last Indexed");
+		TreeTableColumn<IndexDirectoryModel, LocalDateTime> lastIndexed = new JFXTreeTableColumn<>("Last Indexed");
 
 		lastIndexed.setCellValueFactory(value -> {
-			return value.getValue().getValue().getLastIndexed().asObject();
+			return value.getValue().getValue().getLastIndexed();
 		});
 
-		TreeTableColumn<IndexDirectoryModel, Integer> removeBox = new JFXTreeTableColumn("");
+		lastIndexed.setCellFactory((
+				TreeTableColumn<IndexDirectoryModel, LocalDateTime> param) -> new JFXTreeTableCell<IndexDirectoryModel, LocalDateTime>() {
+
+					DateTimeFormatter df = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
+
+					@Override
+					protected void updateItem(LocalDateTime item, boolean empty) {
+						super.updateItem(item, empty);
+
+						if (item != null) {
+							setGraphic(null);
+							setText(df.format(item));
+						} else {
+							setText(null);
+							setGraphic(null);
+						}
+					}
+				});
+
+		TreeTableColumn<IndexDirectoryModel, Integer> removeBox = new JFXTreeTableColumn<>("");
 
 		removeBox.setCellValueFactory(value -> {
-			
+
 			return value.getValue().getValue().getDirectoryId().asObject();
 		});
 
@@ -601,19 +808,39 @@ public class DemoPlayerController {
 				TreeTableColumn<IndexDirectoryModel, Integer> param) -> new JFXTreeTableCell<IndexDirectoryModel, Integer>() {
 
 					Button removeFromMapping = new Button("X");
+					Button reIndex = new Button("");
 
 					@Override
 					protected void updateItem(Integer item, boolean empty) {
 						super.updateItem(item, empty);
 
 						if (item != null) {
-							setGraphic(removeFromMapping);
-							setText(null);							
+							removeFromMapping.prefWidthProperty().bind(this.widthProperty().divide(2));
+							reIndex.prefWidthProperty().bind(this.widthProperty().divide(2));
+
+							reIndex.setOnAction(e -> {
+								IndexDirectoryModel rowData = indexedDirectoryData
+										.get(this.getTreeTableRow().getIndex());
+								File directory = new File(rowData.getFilePath().get());
+								crawlDirectory(directory);
+							});
+
+							removeFromMapping.setDisable(true);
+
+							ImageView imgView = new ImageView(reload);
+							imgView.setFitHeight(16);
+							imgView.setFitWidth(16);
+							reIndex.setGraphic(imgView);
+							HBox fp = new HBox(5);
+
+							fp.getChildren().addAll(reIndex, removeFromMapping);
+							setGraphic(fp);
+							setText(null);
 						} else {
 							setText(null);
 							setGraphic(null);
 						}
-						this.setPrefWidth(45);
+						this.setPrefWidth(70);
 					}
 				});
 
@@ -629,12 +856,13 @@ public class DemoPlayerController {
 						return row;
 					}
 				});
-		
+
 		path.setMaxWidth(Integer.MAX_VALUE * 4f);
-		itemsIndexed.setMaxWidth(Integer.MAX_VALUE);
+		itemsIndexed.setMaxWidth(Integer.MAX_VALUE * 0.5f);
 		lastIndexed.setMaxWidth(Integer.MAX_VALUE);
-		removeBox.setMaxWidth(Integer.MAX_VALUE);
-		
+		removeBox.setMinWidth(70);
+		removeBox.setMaxWidth(Integer.MAX_VALUE * 0.1f);
+
 		indexedDirectories.getColumns().addAll(path, itemsIndexed, lastIndexed, removeBox);
 
 		// indexedDirectories.setSelectionModel(null);
@@ -645,30 +873,118 @@ public class DemoPlayerController {
 				RecursiveTreeObject::getChildren);
 		indexedDirectories.setRoot(root);
 		indexedDirectories.setShowRoot(false);
-		
-		TreeTableColumn<LocalTrackModel, String> titleLocal = new JFXTreeTableColumn<>("Title");
-		
-		titleLocal.setCellValueFactory( value ->{
-			return value.getValue().getValue().getTitle();
-		});
-		
-		TreeTableColumn<LocalTrackModel, String> albumLocal = new JFXTreeTableColumn<>("Album");
-		
-		albumLocal.setCellValueFactory( value ->{
-			return value.getValue().getValue().getAlbum();
-		});
-		
-		
-		TreeTableColumn<LocalTrackModel, String> pathLocal = new JFXTreeTableColumn<>("Path");
-		
-		pathLocal.setCellValueFactory( value ->{
-			return value.getValue().getValue().getPath();
-		});
-		
-		musicLibraryView.getColumns().addAll(titleLocal,albumLocal,pathLocal);
-		
-		
 
+		TreeTableColumn<LocalTrackModel, LocalTrackModel> titleLocal = new JFXTreeTableColumn<>("Title");
+
+		titleLocal.setCellValueFactory(value -> {
+			return new SimpleObjectProperty<LocalTrackModel>(value.getValue().getValue());
+		});
+
+		titleLocal.setCellFactory((
+				TreeTableColumn<LocalTrackModel, LocalTrackModel> param) -> new JFXTreeTableCell<LocalTrackModel, LocalTrackModel>() {
+
+					@Override
+					protected void updateItem(LocalTrackModel item, boolean empty) {
+						super.updateItem(item, empty);
+
+						if (item != null) {
+							setText(null);
+
+							// new Label(Integer.toString(item.getTrackLength().get())
+
+							VBox wrapper = new VBox();
+							wrapper.getChildren().addAll(new Label(item.getTitle().get()),
+									new Label("Album: " + item.getAlbum().get()));
+							setGraphic(wrapper);
+						} else {
+							setText(null);
+							setGraphic(null);
+						}
+					}
+
+				});
+//
+//		TreeTableColumn<LocalTrackModel, String> albumLocal = new JFXTreeTableColumn<>("Album");
+//
+//		albumLocal.setCellValueFactory(value -> {
+//			return value.getValue().getValue().getAlbum();
+//		});
+
+//		TreeTableColumn<LocalTrackModel, String> pathLocal = new JFXTreeTableColumn<>("Path");
+//
+//		pathLocal.setCellValueFactory(value -> {
+//			return value.getValue().getValue().getPath();
+//		});
+
+		musicLibraryView.getColumns().addAll(titleLocal/* , albumLocal, pathLocal */);
+
+		musicLibraryView.setRowFactory(new Callback<TreeTableView<LocalTrackModel>, TreeTableRow<LocalTrackModel>>() {
+			@Override
+			public TreeTableRow<LocalTrackModel> call(TreeTableView<LocalTrackModel> param) {
+				TreeTableRow<LocalTrackModel> row = new TreeTableRow<>();
+
+				row.setOnDragDetected(event -> {
+					// TODO link!
+					Dragboard db = row.startDragAndDrop(TransferMode.ANY);
+
+					/* Put a string on a dragboard */
+					ClipboardContent content = new ClipboardContent();
+					LocalTrackModel trackModel = row.getItem();
+					content.put(dragTrackFormat, trackModel);
+
+					// content.putString(trackModel.getPath().get());
+					db.setContent(content);
+
+					event.consume();
+
+				});
+
+				row.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+
+					if (e.getClickCount() == 2) {
+
+						if (currentlyActiveDevice != null) {
+
+							LocalTrackModel trackModel = row.getItem();
+
+							// String title, String creator, String albumArtist, String album, String
+							// albumArtURI
+							TrackMetadata meta = new TrackMetadata(trackModel.getTitle().get(), "", "",
+									trackModel.getAlbum().get(), "");
+							try {
+
+								// x-rincon-mp3radio://
+								String playbackPath = "http://" + fileProvider.toMappedPath(trackModel.getPath().get());
+
+								// Add after the current song
+								int curQueueIndex = currentlyActiveDevice.getCurrentTrackInfo().getQueueIndex();
+
+								currentlyActiveDevice.addToQueue(curQueueIndex + 1, playbackPath, meta);
+								if (!currentlyActiveDevice.getPlayState().equals(PlayState.PLAYING)) {
+									currentlyActiveDevice.playFromQueue(curQueueIndex + 1);
+								}
+								// We will get a notification about queue update but it might take a few
+								// seconds. Speed it up
+								rebuildQueueList();
+							} catch (IOException | SonosControllerException e1) {
+								e1.printStackTrace();
+							}
+
+						}
+
+					}
+
+				});
+
+				return row;
+			}
+		});
+
+		musicLibraryView.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
+
+		musicLibraryView
+				.setRoot(new RecursiveTreeItem<LocalTrackModel>(localMusicData, RecursiveTreeObject::getChildren));
+		musicLibraryView.setShowRoot(false);
 	}
 
 	private void switchZone(String zoneName, VBox groupWrapper) {
@@ -721,7 +1037,34 @@ public class DemoPlayerController {
 					}
 
 					@Override
-					public void playModeChanged(PlayMode playMode) {
+					public void playStateChanged(PlayState playState) {
+						switch (playState) {
+						case ERROR:
+							curPlayPauseImage = playImg;
+							curPlayPauseImageHoover = playImgHoover;
+							playPauseBtn.setImage(curPlayPauseImage);
+							break;
+						case PAUSED_PLAYBACK:
+							curPlayPauseImage = playImg;
+							curPlayPauseImageHoover = playImgHoover;
+							playPauseBtn.setImage(curPlayPauseImage);
+							break;
+						case PLAYING:
+							curPlayPauseImage = pauseImg;
+							curPlayPauseImageHoover = pauseImgHoover;
+							playPauseBtn.setImage(curPlayPauseImage);
+							break;
+						case STOPPED:
+							curPlayPauseImage = playImg;
+							curPlayPauseImageHoover = playImgHoover;
+							playPauseBtn.setImage(curPlayPauseImage);
+							break;
+						case TRANSITIONING:
+							break;
+						default:
+							break;
+
+						}
 
 					}
 				};
@@ -755,11 +1098,29 @@ public class DemoPlayerController {
 		Platform.runLater(() -> {
 			currentPlaylistData.clear();
 
+			TrackMetadata currentlyPlaying = null;
+			try {
+				currentlyPlaying = currentlyActiveDevice.getCurrentTrackInfo().getMetadata();
+			} catch (IOException | SonosControllerException e1) {
+				e1.printStackTrace();
+			}
+
 			List<TrackMetadata> queueInfo;
 			try {
 				queueInfo = currentlyActiveDevice.getQueue(0, Integer.MAX_VALUE);
 				for (TrackMetadata t : queueInfo) {
-					currentPlaylistData.add(new TrackMetadataModel(t, currentlyActiveDevice));
+
+					// We can't simply go by index as we want to be able to sort the table in the
+					// future?
+					TrackMetadataModel tm = new TrackMetadataModel(t, currentlyActiveDevice);
+					if (currentlyPlaying != null) {
+						if (currentlyPlaying.getAlbum().equals(t.getAlbum())
+								&& currentlyPlaying.getTitle().equals(t.getTitle())) {
+							tm.getCurrentlyPlayingProperty().set(true);
+						}
+					}
+
+					currentPlaylistData.add(tm);
 				}
 				TreeItem<TrackMetadataModel> root = new RecursiveTreeItem<TrackMetadataModel>(currentPlaylistData,
 						RecursiveTreeObject::getChildren);
@@ -838,6 +1199,8 @@ public class DemoPlayerController {
 				if (e.getClickCount() == 2) {
 					try {
 						currentlyActiveDevice.playFromQueue(row.getIndex() + 1);
+						// TODO we shouldn't rebuild the entire queue. anyways go for it now
+						rebuildQueueList();
 					} catch (IOException | SonosControllerException e1) {
 						e1.printStackTrace();
 					}
@@ -886,9 +1249,45 @@ public class DemoPlayerController {
 	}
 
 	private void setupSongPositionSpliderAnimation(TrackInfo currentTrack, boolean playing) {
+
+		System.out.println("Setup position slider animation");
+
 		positionAnimation.pause();
 
 		int duration = currentTrack.getDuration();
+
+		// Either a radio stream or a custom file set by playUri.
+		if (duration == 0) {
+			// This is escaped isn't it? extract the data as we would have found it in the
+			// database
+
+			String uriEscaped = currentTrack.getUri();
+
+			// strip http://
+			if (uriEscaped.startsWith("http://")) {
+				uriEscaped = uriEscaped.substring(7);
+			}
+
+			// Strip file provider prefix
+			String unmapped = fileProvider.toUnmappedPath(uriEscaped);
+
+			// TODO guava does not offer a proper decode method. we decode and encode with
+			// different classes!!!
+			// maybe time to cut guava from the project?
+			try {
+				unmapped = URLDecoder.decode(unmapped, "UTF-8");
+				unmapped = unmapped.replace("/", "\\");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+
+			System.out.println(unmapped);
+			try {
+				duration = db.getSongDuration(unmapped);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 
 		songPositionSlider.setMin(0);
 		songPositionSlider.setMax(duration);
@@ -903,12 +1302,12 @@ public class DemoPlayerController {
 		SimpleStringProperty durationLabelTest = new SimpleStringProperty();
 		SimpleIntegerProperty currentPositionProperty = new SimpleIntegerProperty(initialOffset);
 
+		int songDurc = duration;
+
 		currentPositionProperty.addListener((obs, oldVal, newVal) -> {
-
 			// new value will be updates
-
 			durationLabelTest.set(ParserHelper.secondsToFormatedTimestamp(newVal.intValue()) + " / "
-					+ ParserHelper.secondsToFormatedTimestamp(duration));
+					+ ParserHelper.secondsToFormatedTimestamp(songDurc));
 		});
 
 		Platform.runLater(() -> {
@@ -920,7 +1319,10 @@ public class DemoPlayerController {
 
 		double timeLeft = duration - currentTrack.getPosition();
 
+		System.out.println(timeLeft + " " + duration + " " + currentTrack.getPosition());
+
 		if (timeLeft > 0) {
+
 			positionAnimation.getKeyFrames().add(new KeyFrame(Duration.seconds(timeLeft), kv, kv1));
 			positionAnimation.setCycleCount(0);
 

@@ -1,12 +1,15 @@
-package com.github.kilianB.example.player;
+package com.github.kilianB.example.localFilePlayer;
+
+import java.time.LocalDateTime;
 
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleIntegerProperty;
 
 public class IndexDirectoryModel extends RecursiveTreeObject<IndexDirectoryModel> {
 
@@ -14,13 +17,13 @@ public class IndexDirectoryModel extends RecursiveTreeObject<IndexDirectoryModel
 	
 	private ReadOnlyStringWrapper filePath;
 	private ReadOnlyIntegerWrapper songsFound;
-	private ReadOnlyIntegerWrapper  lastIndexed;
+	private ReadOnlyObjectWrapper<LocalDateTime>  lastIndexed;
 	private ReadOnlyIntegerWrapper  directoryId = new ReadOnlyIntegerWrapper (id++);
 	
-	public IndexDirectoryModel(String filePath, int songsFound, int lastIndexed) {
+	public IndexDirectoryModel(String filePath, int songsFound, LocalDateTime lastIndexed) {
 		this.filePath = new ReadOnlyStringWrapper(filePath);
 		this.songsFound = new ReadOnlyIntegerWrapper(songsFound);
-		this.lastIndexed = new ReadOnlyIntegerWrapper(lastIndexed);
+		this.lastIndexed = new ReadOnlyObjectWrapper<>(lastIndexed);
 	}
 
 
@@ -36,7 +39,7 @@ public class IndexDirectoryModel extends RecursiveTreeObject<IndexDirectoryModel
 		return directoryId.getReadOnlyProperty();
 	}
 	
-	public ReadOnlyIntegerProperty getLastIndexed() {
+	public ReadOnlyObjectProperty<LocalDateTime> getLastIndexed() {
 		return lastIndexed.getReadOnlyProperty();
 	}
 	

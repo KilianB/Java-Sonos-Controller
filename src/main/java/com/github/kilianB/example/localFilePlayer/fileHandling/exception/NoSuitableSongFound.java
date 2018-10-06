@@ -1,4 +1,4 @@
-package com.github.kilianB.example.player.fileHandling.exception;
+package com.github.kilianB.example.localFilePlayer.fileHandling.exception;
 
 public class NoSuitableSongFound extends MusicProviderException{
 

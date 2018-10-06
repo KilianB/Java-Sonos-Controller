@@ -1,4 +1,4 @@
-package com.github.kilianB.example.localFilePlayer.fileHandling;
+package com.github.kilianB.example.voiceToTextPlayback;
 
 import java.io.File;
 import java.util.HashSet;
@@ -100,7 +100,7 @@ public class NetworkFileProvider {
 
 	
 	public String toMappedPath(String originalLocation) {
-		return mapPrefix + originalLocation;
+		return mapPrefix + originalLocation.replace("\\","/");
 	}
 	
 	public String toUnmappedPath(String mappedLocation) {

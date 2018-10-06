@@ -1,32 +1,27 @@
-package com.github.kilianB.example.player.fileHandling;
+package com.github.kilianB.example.localFilePlayer.fileHandling;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.attribute.FileTime;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Stack;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveTask;
+import java.util.function.IntConsumer;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.apache.commons.text.similarity.LevenshteinDistance;
-
-import org.h2.jdbcx.JdbcDataSource;
-import org.h2.tools.SimpleResultSet;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.audio.exceptions.CannotReadException;
@@ -36,14 +31,6 @@ import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.KeyNotFoundException;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagException;
-
-import com.github.kilianB.example.player.fileHandling.exception.MusicProviderInternalException;
-import com.github.kilianB.example.player.fileHandling.exception.NoSuitableAlbumFound;
-import com.github.kilianB.example.player.fileHandling.exception.NoSuitableSongFound;
-import com.github.kilianB.example.player.fileHandling.model.Album;
-import com.github.kilianB.example.player.fileHandling.model.Interpret;
-import com.github.kilianB.example.player.fileHandling.model.Song;
-import com.github.kilianB.example.player.util.StringUtil;
 
 /**
  * Retrieve local/network saved music files by building a searchable index. The
@@ -65,86 +52,9 @@ import com.github.kilianB.example.player.util.StringUtil;
  * the method {@link #extractAudioFileInformation(File)}
  * </p>
  * 
- * <h3>Soft Crawl <-> Hard Crawl</h3> </br>
- * <b>Hard crawling</b> deletes all saved information and re-indexes the entire
- * folder and file structure. This operation has to be performed at least once
- * to build a full functional database. </br>
- * <b>Soft crawls</b> try to determine the delta between the database model and
- * the actual file structure resulting in an immense speedup while still being
- * able to find newly added files.
- * <p>
- * Invoke crawls by calling {@link #forceCrawl(boolean)} or
- * {@link #forceCrawlAsynch(boolean)}
+ * The crawler can detect cyclic folder structures and avoids deadlocks.
+ * Currently artists are only differentiated by name which might raise ambiguity. 
  * 
- * <table>
- * <tr>
- * <th></th>
- * <th>Soft Crawl</th>
- * <th>Hard Crawl</th>
- * </tr>
- * <tr>
- * <td>Indexing*</td>
- * <td>16 seconds</td>
- * <td>5 minutes</td>
- * </tr>
- * <tr>
- * <td>Adding new files</td>
- * <td>Yes</td>
- * <td>Yes</td>
- * </tr>
- * <tr>
- * <td>Aware of Tag edits</td>
- * <td>No</td>
- * <td>Yes</td>
- * </tr>
- * <tr>
- * <td>Aware of file deletion</td>
- * <td>No</td>
- * <td>Yes</td>
- * </tr>
- * </table>
- *
- * *(8235 music files) indexed over local network from a NAS-Server
- * <h3>Implementation specific notes</h3>
- * <ul>
- * <li>The crawler can detect cyclic folder structures and avoids deadlocks</li>
- * <li>A soft crawl checks for changes in the absolute path. If only tags are
- * edited the information will not be changed in the database</li>
- * <li>Soft crawling does not delete entries in the database if files are not
- * present anymore. If retrieved by a query the missing files will be detected
- * and skipped*</li>
- * <li>Trying to increase crawl speed I implemented a hashing approach to
- * complement my own folder structure:
- * <ol>
- * <li>Create a hash out of all file names present in the directory</li>
- * <li>If the hash changed to last itteration look at the individual files else
- * skip</li>
- * </ol>
- * Even in the best case with every single album the tradeoff between computing
- * the hash and checking the database evens out with checking each individual
- * file therefore this part will most likely be deleted in the future.</li>
- * </ul>
- * 
- * <h3>Big TODO List</h3>
- * <p>
- * TODO:* we might as well delete the entry if the files are not there anymore.
- * Issues arise if network folders are not present at certain times which would
- * lead to a potential disastrous re-indexing effort. Either check if the entire
- * folder is not reachable and skip or re-index the entire file system once
- * every half year. (Stats about how many files are available will be skewed)
- * </p>
- * <p>
- * TODO: Indexing takes place at the construction of this object therefore a
- * singleton approach sounds reasonable. Maybe even make all modules singletons.
- * </p>
- * <p>
- * TODO: Changing the content of a file does not result in re-indexing meaning
- * that the file can still be accessed using the old meta tags. This is fine if
- * only the content of the file changes. e.g. parts of the file get truncated,
- * semantic changes (the file with the name "HelloWorld.mp3" has a different
- * author) are not caught by the indexing due to the way the hashes are computed
- * / file presence (file path) are checked
- * </p>
  * <p>
  * TODO create n:n relationship between interpret and album. Currently only one
  * interpret / album
@@ -160,10 +70,11 @@ import com.github.kilianB.example.player.util.StringUtil;
  * @author Kilian
  *
  */
-public class MusicFileIndexer implements MusicProvider {
+public class MusicFileIndexer {
 
 	private DatabaseManager database;
-	private HashMap<Integer, String> directoryHashset = new HashMap<>();
+
+	private PathMatcher extensionMatcher;
 
 	/**
 	 * Be aware that calling this method the first time will result in the file
@@ -181,12 +92,21 @@ public class MusicFileIndexer implements MusicProvider {
 	 *                              there is no need to waste peformance for a
 	 *                              crawl. The initial index might take a long time.
 	 */
-	public MusicFileIndexer(String[] allowedFileExtensions) {
+	public MusicFileIndexer(String[] allowedFileExtensions, DatabaseManager database) {
 
-		allowedFileTypes = new ArrayList<>(Arrays.asList(allowedFileExtensions));
+		StringBuilder allowedFilesExtensionBuilder = new StringBuilder();
+
+		for (String extension : allowedFileExtensions) {
+			allowedFilesExtensionBuilder.append(extension);
+		}
+
+		String fileExtensionPattern = "glob:**/*.{" + Stream.of(allowedFileExtensions).collect(Collectors.joining(","))
+				+ "}";
+
+		extensionMatcher = FileSystems.getDefault().getPathMatcher(fileExtensionPattern);
 
 		// Setup database to store music
-		database = new DatabaseManager();
+		this.database = database;
 
 		// Crawl directories
 //		if (softCrawl) {
@@ -194,414 +114,213 @@ public class MusicFileIndexer implements MusicProvider {
 //		}
 	}
 
-	// TODO maybe use proter stemmer, editdistance and wildcard matching etc ..
 	/*
-	 * Porter, 1980, An algorithm for suffix stripping, Program, Vol. 14, no. 3, pp
-	 * 130-137
+	 * ----------------------------------------------------------------------------+
+	 * ----------------------------------------------------------------------------|
+	 * --------------------------------- Crawling----------------------------------|
+	 * ----------------------------------------------------------------------------|
+	 * ----------------------------------------------------------------------------+
 	 */
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Crawl the directory and add all found music files to the database. Invalid
+	 * entries will be removed
 	 * 
-	 * @see
-	 * modules.musicProvider.MusicProvider#getInterpretNameAprox(java.lang.String,
-	 * int)
+	 * @param baseDirectory
+	 * @param callback
 	 */
-	@Override
-	public ArrayList<String> getInterpretNameAprox(String name, int editDistance) {
-
-		// TODO not thread save... and inefficient. The distance for each object is
-		// calculated at least 3 times.
-		try {
-			database.wordThreshold = editDistance;
-			database.retrieveInterpretNameAprox.setString(1, name);
-			ArrayList<String> interpretNames = new ArrayList<>();
-
-			ResultSet rs = database.retrieveInterpretNameAprox.executeQuery();
-
-			while (rs.next()) {
-				interpretNames.add(rs.getString(2));
+	public void crawlAsynch(Path baseDirectory, IntConsumer callback) {
+		new Thread(() -> {
+			int tracksIndex = crawl(false, baseDirectory);
+			if (callback != null) {
+				callback.accept(tracksIndex);
 			}
-
-			interpretNames.sort(new Comparator<String>() {
-				@Override
-				public int compare(String o1, String o2) {
-					LevenshteinDistance l = new LevenshteinDistance();
-					int d1 = l.apply(o1, name);
-					int d2 = l.apply(o2, name);
-					if (d1 > d2) {
-						return 1;
-					} else if (d1 < d2) {
-						return -1;
-					}
-					return 0;
-				}
-
-			});
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return null;
-
-	}
-
-	public ArrayList<String> getIndexedFolders() throws MusicProviderInternalException {
-		try {
-			ResultSet rs = database.retrieveIndexedFolders.executeQuery();
-			ArrayList<String> indexedFolders = new ArrayList<>();
-			while (rs.next()) {
-				indexedFolders.add(rs.getString("FOLDERPATH"));
-			}
-			return indexedFolders;
-		} catch (SQLException e) {
-			throw new MusicProviderInternalException("SQL or URI Syntax exception");
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see modules.musicProvider.MusicProvider#getAlbumsByName(java.lang.String)
-	 */
-	@Override
-	public synchronized ArrayList<Album> getAlbumsByName(String albumName)
-			throws NoSuitableAlbumFound, MusicProviderInternalException {
-
-		try {
-			database.retrieveAlbumIDByName.setString(1, albumName);
-			ResultSet rs = database.retrieveAlbumIDByName.executeQuery();
-
-			ArrayList<Album> albums = new ArrayList<>();
-
-			while (rs.next()) {
-				int albumID = rs.getInt(1);
-				String title = rs.getString("TITLE");
-				String description = rs.getString("DESCRIPTION");
-				String albumCoverPath = rs.getString("ALBUMCOVER");
-				int interpretID = rs.getInt("INTERPRET_ID");
-
-				File albumCover = albumCoverPath == null ? null : new File(albumCoverPath);
-
-				Interpret interpret;
-				// Retrieve the interpret
-				if (interpretID > 0) {
-					database.retrieveInterpretByID.setInt(1, interpretID);
-					ResultSet interpretQuery = database.retrieveInterpretByID.executeQuery();
-
-					if (interpretQuery.next()) {
-
-						interpret = new Interpret(interpretQuery.getString("NAME"), interpretQuery.getString("BIO"),
-								interpretQuery.getDate("BIRTHYEAR"));
-					} else {
-						interpret = Interpret.createUnknownInterpret();
-					}
-				} else {
-					interpret = Interpret.createUnknownInterpret();
-				}
-
-				// Retrieve the files
-				database.retrieveSongsOfAlbumByAlbumID.setInt(1, albumID);
-				ResultSet songQuery = database.retrieveSongsOfAlbumByAlbumID.executeQuery();
-
-				ArrayList<Song> audioFiles = new ArrayList<>();
-
-				while (songQuery.next()) {
-					// We don't need the title as it's already in the tag..? Or do we want to
-					// differentiate between
-					// Database Title and Tag title?
-					String songTitle = songQuery.getString("TITLE");
-					String songDescription = songQuery.getString("DESCRIPTION");
-					String filePath = songQuery.getString("URL");
-					URI songFile = filePath == null ? null : new URI(filePath);
-					// Which should actually fail ...
-					if (filePath == null || !new File(filePath).exists()) {
-						continue;
-						// TODO clean up work, delete file from database.
-					}
-					audioFiles.add(new Song(songTitle, songDescription, songFile));
-				}
-
-				albums.add(new Album(title, description, albumCover, interpret, audioFiles));
-			}
-			if (albums.isEmpty()) {
-				throw new NoSuitableAlbumFound("Local Network Music Provider could not find an album for " + albumName);
-			} else {
-				return albums;
-			}
-
-		} catch (SQLException | URISyntaxException e) {
-			throw new MusicProviderInternalException("SQL or URI Syntax exception");
-		}
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see modules.musicProvider.MusicProvider#getSongsByName(java.lang.String)
-	 */
-	@Override
-	public synchronized ArrayList<Song> getSongsByName(String trackName)
-			throws NoSuitableSongFound, MusicProviderInternalException {
-
-		ArrayList<Song> songs = new ArrayList<>();
-
-		try {
-			database.retrieveSongsByName.setString(1, trackName);
-			ResultSet songQuery = database.retrieveSongsByName.executeQuery();
-
-			while (songQuery.next()) {
-				String songTitle = songQuery.getString("TITLE");
-				String songDescription = songQuery.getString("DESCRIPTION");
-				String filePath = songQuery.getString("URL");
-				String uri = StringUtil.decodeURLToURI(filePath);
-				URI songFile = filePath == null ? null : new URI(uri);
-				// Which should actually fail ...
-				if (filePath == null || !new File(filePath).exists()) {
-					continue;
-					// TODO clean up work, delete file from database.
-				}
-				songs.add(new Song(songTitle, songDescription, songFile));
-
-			}
-
-			if (songs.isEmpty()) {
-				throw new NoSuitableSongFound(
-						"Local Network Music Provider could not find a suitable song for " + trackName);
-			} else {
-				return songs;
-			}
-		} catch (SQLException | URISyntaxException e) {
-			e.printStackTrace();
-			throw new MusicProviderInternalException("SQL or URI Syntax Exception");
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * modules.musicProvider.MusicProvider#getSongsByInterpret(java.lang.String)
-	 */
-	@Override
-	public ArrayList<Song> getSongsByInterpret(String interpretName)
-			throws NoSuitableSongFound, MusicProviderInternalException {
-		throw new UnsupportedOperationException();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * modules.musicProvider.MusicProvider#getAlbumsByInterpret(java.lang.String)
-	 */
-	@Override
-	public ArrayList<Album> getAlbumsByInterpret(String interpretName)
-			throws NoSuitableAlbumFound, MusicProviderInternalException {
-		throw new UnsupportedOperationException();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see modules.musicProvider.MusicProvider#getSongsByGenre(java.lang.String)
-	 */
-	@Override
-	public ArrayList<Song> getSongsByGenre(String genre) throws NoSuitableSongFound, MusicProviderInternalException {
-		throw new UnsupportedOperationException();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see modules.musicProvider.MusicProvider#getAlbumsByGenre(java.lang.String)
-	 */
-	@Override
-	public ArrayList<Album> getAlbumsByGenre(String genre) throws NoSuitableAlbumFound, MusicProviderInternalException {
-		throw new UnsupportedOperationException();
-	}
-
-	/*
-	 * -----------------------------------------------------------------------------
-	 * ---------------------------------+
-	 * ----------------------------------------------- Crawling
-	 * -----------------------------------------------------|
-	 * -----------------------------------------------------------------------------
-	 * ---------------------------------+
-	 */
-	Stack<File> directoryToSearch = new Stack<>(); // Directories which still need to be crawled //already syncronized
-	ArrayList<String> allowedFileTypes;
-
-	public void forceCrawlAsynch(File directory, Runnable callback) {
-		directoryToSearch.add(directory);
-		new Thread(() -> forceCrawl(false,callback)).start();
+		}).start();
 	}
 
 	/**
 	 * Blocks until crawling is completed.
 	 * 
-	 * @param reIndex If true all entries in the database will be deleted and files
-	 *                are reindexed from scratch;
-	 * @param callback 
+	 * @param reIndex  If true all entries in the database will be deleted and files
+	 *                 are reindexed from scratch;
+	 * @param callback
 	 */
-	public void forceCrawl(boolean reIndex, Runnable callback) {
+	public int crawl(boolean reIndex, Path baseDirectory) {
 
+		// Delete all entries in the database
 		if (reIndex) {
+			// NOP. We just reindex present files...
 			database.resetDB();
 		}
 
-		System.out.println("Start crawling");
-		crawlDirectory();
+		/**
+		 * Common fork join pool. Reuse to save resources
+		 */
+		ForkJoinPool commonPool = ForkJoinPool.commonPool();
 
-		// Remove all hashes which are NOT in directory hash
-		database.cleanUpDirectoryHash(directoryHashset);
+		/**
+		 * avoid cyclic folder structure especially with symlinks
+		 */
+		KeySetView<Path, Boolean> alreadySeen = ConcurrentHashMap.newKeySet();
 
-		if(callback != null){
-			callback.run();
+		try {
+			baseDirectory = baseDirectory.toRealPath();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+
+		System.out.println("Start crawling: " + baseDirectory);
+
+		try {
+
+			Timestamp startCrawlingTimestamp = new Timestamp(System.currentTimeMillis());
+
+			int directoryId = database.insertIndexedLocation(baseDirectory);
+			alreadySeen.add(baseDirectory);
+			int titlesIndexed = commonPool.invoke(new CrawlDirectory(baseDirectory, alreadySeen, directoryId));
+
+			/*
+			 * 
+			 */
+			int titlesRemoved = database.deleteTracksIndexedOlder(startCrawlingTimestamp, directoryId);
+
+			System.out.println("Titles indexed: " + titlesIndexed + " Titles removed: " + titlesRemoved);
+
+			return titlesIndexed;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		// Purge invalid data
+		// SELECT * FROM TRACKS WHERE DIRECTORY.ID = directoryId and lastIndexed <
+		// startTimestamp
+
+		return 0;
 	}
 
-	private void crawlDirectory() {
+	/**
+	 * Insert real path!
+	 * 
+	 * @author Kilian
+	 *
+	 */
+	class CrawlDirectory extends RecursiveTask<Integer> {
 
-		// TODO a fork join pool is the right call for this!
-		int threadCount = 1; // Runtime.getRuntime().availableProcessors() * 2;
+		private static final long serialVersionUID = 5401593123821239010L;
 
-		// We do have io requests
-		ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-		ArrayList<Future<File>> callback = new ArrayList<>();
+		private int directoryId;
+		private Path directory;
+		private KeySetView<Path, Boolean> alreadySeen;
 
-		for (int i = 0; i < threadCount; i++) {
-			Future future = executor.submit(() -> {
-				File currentDirectory = null;
+		public CrawlDirectory(Path directory, KeySetView<Path, Boolean> alreadySeen, int directoryId) {
+			this.directory = directory;
+			this.alreadySeen = alreadySeen;
+			this.directoryId = directoryId;
+		}
 
-				while (true) {
-					currentDirectory = retrieveFileSynch(directoryToSearch);
-					System.out.println("Cur Dir: " + currentDirectory);
-					if (currentDirectory == null) {
-						break;
-					}
-					// Does this ever return directories or only files?
-					File[] children = currentDirectory.listFiles();
+		@Override
+		protected Integer compute() {
 
-					/*
-					 * Compute hash of the filenames residing in this directory. Computing the hash
-					 * allows us to skip cyclic folder structures and to skip over directories which
-					 * were already indexed during an earlier run and no file changed within.
-					 */
+			if (Files.isDirectory(directory)) {
 
-					StringBuilder sb = new StringBuilder();
-					for (File f : children) {
-						sb.append(f.getName());
-					}
-					int hash = sb.toString().hashCode();
+				List<Path> subPaths;
+				try {
+					subPaths = Files.walk(directory).collect(Collectors.toList());
+					List<CrawlDirectory> subtasks = new ArrayList<>();
 
-					// Skip cyclic folder structures
-					if (directoryHashset.containsKey(hash))
-						continue;
-
-					// Remember we have seen this folder already
-					directoryHashset.put(hash, currentDirectory.getAbsolutePath());
-
-					// Did we look at the folder on an earlier indexing run already?
-					boolean hashExists = database.doesDirectoryHashExist(hash);
-
-					for (File f : children) {
-						if (f.isDirectory()) {
-							// If it's a directory on it's own save it for later usage
-							directoryToSearch.add(f);
-						} else {
-
-							// Directories are still pushed on the stack to ensure that we are able to check
-							// every single hash.
-							// But if the hash is consistent we are sure that the files did not change
-							// therefore we can skip them
-							if (hashExists) {
-								continue;
-							}
-							// Is the file a music file we wan to process?
-
-							String extension = StringUtil.getFileExtension(f);
-
-							if (f.getName().startsWith(".")) {
-								// Ignore the file;
-								continue;
-							}
-
-							if (allowedFileTypes.contains(extension)) {
-
-								try {
-
-									// Is the file is already indexed we don't have to look into it anymore
-									// Creating an AudioFileIO.read operation is expensive and by querying the
-									// database
-									// beforehand we save
-
-									if (database.doesTrackExist(f.getAbsolutePath()) == -1) {
-
-										System.out.println(f + "Track");
-										AudioFile audioFile = AudioFileIO.read(f);
-
-										String title;
-										String artistName;
-
-										Tag audioTag = audioFile.getTag();
-
-										// We don't have much to work with. NO ID3 Tags
-										if (audioTag == null) {
-											title = f.getName();
-											artistName = "Unknown";
-										} else {
-											title = audioTag.getFirst(FieldKey.TITLE);
-											artistName = audioTag.getFirst(FieldKey.ARTIST);
-										}
-
-										int interpretID = database.insertInterpret(artistName, null, null);
-										int trackID = database.insertTrack(title, null, f.getAbsolutePath());
-
-										if (audioTag != null) {
-											try {
-												String albumName = audioTag.getFirst(FieldKey.ALBUM);
-												int albumID = database.insertAlbum(albumName, null, null, interpretID);
-												database.insertAlbumTrack(albumID, trackID);
-											} catch (KeyNotFoundException e) {
-
-											}
-										}
-									}
-								} catch (CannotReadException | IOException | TagException | ReadOnlyFileException
-										| InvalidAudioFrameException | KeyNotFoundException | SQLException e) {
-									e.printStackTrace();
-								}
-							}
+					for (Path path : subPaths) {
+						// Create subtasks
+						// resolve symlinks ...
+						Path pReal = path.toRealPath();
+						if (!alreadySeen.contains(pReal)) {
+							subtasks.add(new CrawlDirectory(pReal, alreadySeen, directoryId));
+							alreadySeen.add(pReal);
 						}
 					}
+					return ForkJoinTask.invokeAll(subtasks).stream().mapToInt(ForkJoinTask::join).sum();
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-			});
-			callback.add(future);
-		}
-		;
+				// Do we want to do the hashing? the hash does not reflect deep changes!
+			} else {
+				// File
+				if (extensionMatcher.matches(directory)) {
 
-		// Finish executor service. Maybe be non blocking and simply respond to the
-		// program once it is done indexing?
-		for (Future f : callback) {
-			try {
-				f.get();
-			} catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
+					FileTime lastModified = null;
+					try {
+						lastModified = Files.getLastModifiedTime(directory);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+
+					try {
+
+						int trackId = database.doesTrackExist(directory.toString());
+
+						if (trackId == -1 || database.getTrackLastModified(directory.toString())
+								.getTime() != lastModified.toMillis()) {
+
+							File f = directory.toFile();
+
+							AudioFile audioFile = AudioFileIO.read(f);
+
+							String title;
+							String artistName;
+
+							Tag audioTag = audioFile.getTag();
+
+							// We don't have much to work with. NO ID3 Tags
+							if (audioTag == null) {
+								title = f.getName();
+								artistName = "Unknown";
+							} else {
+								title = audioTag.getFirst(FieldKey.TITLE);
+								artistName = audioTag.getFirst(FieldKey.ARTIST);
+
+								if (title.isEmpty()) {
+									title = "Unknown";
+								}
+
+								if (artistName.isEmpty()) {
+									artistName = "Unknown";
+								}
+							}
+
+							int trackLength = audioFile.getAudioHeader().getTrackLength();
+
+							int interpretID = database.insertInterpret(artistName, null, null);
+
+							int trackID = database.insertTrack(title, null, trackLength, directory.toString(),
+									DatabaseManager.toSQLTimestamp(lastModified), directoryId);
+
+							String albumName = "Unknown";
+							if (audioTag != null) {
+
+								try {
+									albumName = audioTag.getFirst(FieldKey.ALBUM);
+									if (albumName.isEmpty())
+										albumName = "Unknown";
+								} catch (KeyNotFoundException e) {
+								}
+							}
+
+							int albumID = database.insertAlbum(albumName, null, null, interpretID);
+							database.insertAlbumTrack(albumID, trackID);
+						} else {
+							database.updateTrackIndexedTimestamp(trackId);
+						}
+						return 1;
+					} catch (KeyNotFoundException | SQLException | CannotReadException | IOException | TagException
+							| ReadOnlyFileException | InvalidAudioFrameException e) {
+						e.printStackTrace();
+					}
+				}
+				return 0;
 			}
+			return 0;
 		}
-		executor.shutdown();
-	}
 
-	private synchronized File retrieveFileSynch(Stack<File> stack) {
-		if (!stack.isEmpty()) {
-			return stack.pop();
-		}
-		return null;
 	}
-
-	// Return approximate results. levenshtein distance
 
 	private static final Logger LOGGER = Logger.getLogger(MusicFileIndexer.class.getName());
 

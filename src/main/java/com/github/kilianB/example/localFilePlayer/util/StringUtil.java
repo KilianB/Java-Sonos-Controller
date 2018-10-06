@@ -1,4 +1,4 @@
-package com.github.kilianB.example.player.util;
+package com.github.kilianB.example.localFilePlayer.util;
 
 import java.io.File;
 
@@ -101,12 +101,15 @@ public class StringUtil {
 		}
 		return sb.toString();		
 	}
+
 	
 	public static String decodeURLToURI(String url) {
 		//backward slashes will get escaped therefore change it
 		url = url.replace("\\", "/");
-		return "x-file-cifs:" + UrlEscapers.urlFragmentEscaper().escape(url);
+		return UrlEscapers.urlFragmentEscaper().escape(url);
 	}
+	
+
 	
 	
 	private final static long MS_IN_SEC = 1000;

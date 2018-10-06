@@ -1,4 +1,4 @@
-package com.github.kilianB.example.player.fileHandling.exception;
+package com.github.kilianB.example.localFilePlayer.fileHandling.exception;
 
 /**
  * Exception to be thrown if the music provider engine failed to make a request which is unlikely to 

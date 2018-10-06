@@ -1,4 +1,4 @@
-package com.github.kilianB.example.player;
+package com.github.kilianB.example.localFilePlayer;
 
 import com.github.kilianB.sonos.SonosDevice;
 import com.github.kilianB.sonos.model.TrackMetadata;

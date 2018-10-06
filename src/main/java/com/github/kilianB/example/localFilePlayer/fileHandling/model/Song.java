@@ -1,15 +1,18 @@
-package com.github.kilianB.example.player.fileHandling.model;
+package com.github.kilianB.example.localFilePlayer.fileHandling.model;
 
 import java.net.URI;
 
 public class Song {
 	String title;
 	String description;
+	int trackLength;
 	URI musicFile;
+	Album album;
 	
-	public Song(String title, String description, URI url) {
+	public Song(String title, int trackLength, String description, URI url) {
 		super();
 		this.title = title;
+		this.trackLength = trackLength;
 		this.description = description;
 		this.musicFile = url;
 	}
@@ -32,6 +35,28 @@ public class Song {
 	public void setMusicFile(URI url) {
 		this.musicFile = url;
 	}
+
+	/**
+	 * @return the trackLength
+	 */
+	public int getTrackLength() {
+		return trackLength;
+	}
+
+	/**
+	 * @param trackLength the trackLength to set
+	 */
+	public void setTrackLength(int trackLength) {
+		this.trackLength = trackLength;
+	}
+
+	/**
+	 * @return the album
+	 */
+	public Album getAlbum() {
+		return album;
+	}
+	
 	
 	
 }

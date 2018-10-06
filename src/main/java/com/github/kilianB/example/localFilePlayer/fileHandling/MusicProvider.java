@@ -1,41 +1,56 @@
-package com.github.kilianB.example.player.fileHandling;
+package com.github.kilianB.example.localFilePlayer.fileHandling;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import com.github.kilianB.example.player.fileHandling.exception.MusicProviderInternalException;
-import com.github.kilianB.example.player.fileHandling.exception.NoSuitableAlbumFound;
-import com.github.kilianB.example.player.fileHandling.exception.NoSuitableSongFound;
-import com.github.kilianB.example.player.fileHandling.model.Album;
-import com.github.kilianB.example.player.fileHandling.model.Song;
+import com.github.kilianB.example.localFilePlayer.fileHandling.exception.MusicProviderInternalException;
+import com.github.kilianB.example.localFilePlayer.fileHandling.exception.NoSuitableAlbumFound;
+import com.github.kilianB.example.localFilePlayer.fileHandling.exception.NoSuitableSongFound;
+import com.github.kilianB.example.localFilePlayer.fileHandling.model.Album;
+import com.github.kilianB.example.localFilePlayer.fileHandling.model.Song;
 
 
 /**
- * A music provider supplies modules and devices with links to music ressources. It does not matter if the files are
- * present on 
+ * A music provider supplies modules and devices with links to music resources. It does not matter if the files are
+ * located on the network, a local device or the internet. <p>
  * 
- * 
- * Note:
- * Per convention resources <b>should</b> be implementation independendly of the devices on the smart server and not discriminate 
- * certain servicse. IF
- * If certain resources are only available for certain 
+ * <b>Note:</b>
+ * Per convention resources <b>should</b> be implementation independently of the devices on the smart server and not discriminate 
+ * certain services. If certain resources are only available for certain devices (e.g. Sonos) the provider shall ensure a lower 
+ * priority when registering to the music manager module.
  * @author Kilian
  *
  */
 public interface MusicProvider{
 
-	ArrayList<Song> getSongsByName(String trackName) throws NoSuitableSongFound, MusicProviderInternalException;
+	
+	/**
+	 * 
+	 * @return
+	 * @throws MusicProviderInternalException
+	 */
+	
+	List<Album> getAllAlbums() throws MusicProviderInternalException;
+	/**
+	 * 
+	 * @param trackName
+	 * @return
+	 * @throws NoSuitableSongFound
+	 * @throws MusicProviderInternalException
+	 */
+	List<Song> getSongsByName(String trackName) throws NoSuitableSongFound, MusicProviderInternalException;
 
-	ArrayList<Song> getSongsByInterpret(String interpretName)
+	List<Song> getSongsByInterpret(String interpretName)
 			throws NoSuitableSongFound, MusicProviderInternalException;
 	
-	ArrayList<Song> getSongsByGenre(String genre) throws NoSuitableSongFound, MusicProviderInternalException;
+	List<Song> getSongsByGenre(String genre) throws NoSuitableSongFound, MusicProviderInternalException;
 	
-	ArrayList<Album> getAlbumsByName(String albumName) throws NoSuitableAlbumFound, MusicProviderInternalException;
+	List<Album> getAlbumsByName(String albumName) throws NoSuitableAlbumFound, MusicProviderInternalException;
 
-	ArrayList<Album> getAlbumsByInterpret(String interpretName)
+	List<Album> getAlbumsByInterpret(String interpretName)
 			throws NoSuitableAlbumFound, MusicProviderInternalException;
 	
-	ArrayList<Album> getAlbumsByGenre(String genre) throws NoSuitableAlbumFound, MusicProviderInternalException;
+	List<Album> getAlbumsByGenre(String genre) throws NoSuitableAlbumFound, MusicProviderInternalException;
 
 	/**
 	 * Return all names of interprets who are within edit distance of the supplied name.
@@ -44,6 +59,6 @@ public interface MusicProvider{
 	 * @param editDistance
 	 * @return
 	 */
-	ArrayList<String> getInterpretNameAprox(String name, int editDistance);
+	ArrayList<String> getInterpretNameAprox(String name, int editDistance) throws MusicProviderInternalException;
 
 }
