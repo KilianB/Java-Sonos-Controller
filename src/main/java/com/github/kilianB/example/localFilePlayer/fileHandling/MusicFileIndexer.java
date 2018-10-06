@@ -81,7 +81,8 @@ public class MusicFileIndexer {
 	 * indexing which can take several minutes. Subsequent calls are greatly reduced
 	 * and just check for differences in file names.
 	 * 
-	 * @param allowedFileExtensions
+	 * @param allowedFileExtensions which files shall be picked up during crawling? 
+	 *                              only extensions without "."
 	 * @param directoriesToIndex    Currently the path is case sensitive in the
 	 *                              sense that files will get indexed twice if the
 	 *                              directory changes.
@@ -101,11 +102,6 @@ public class MusicFileIndexer {
 
 		// Setup database to store music
 		this.database = database;
-
-		// Crawl directories
-//		if (softCrawl) {
-//			forceCrawlAsynch(false);
-//		}
 	}
 
 	/*
@@ -120,8 +116,8 @@ public class MusicFileIndexer {
 	 * Crawl the directory and add all found music files to the database. Invalid
 	 * entries will be removed
 	 * 
-	 * @param baseDirectory
-	 * @param callback
+	 * @param baseDirectory the directory to search
+	 * @param callback	executed after crawling finished
 	 */
 	public void crawlAsynch(Path baseDirectory, IntConsumer callback) {
 		new Thread(() -> {
