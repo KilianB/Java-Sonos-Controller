@@ -85,12 +85,6 @@ public class MusicFileIndexer {
 	 * @param directoriesToIndex    Currently the path is case sensitive in the
 	 *                              sense that files will get indexed twice if the
 	 *                              directory changes.
-	 * @param softCrawl             automatically crawls (re-indexes) the files if
-	 *                              they are missing. This will give you access to
-	 *                              newly created files but take a few seconds. If
-	 *                              you have not altered (added or deleted files)
-	 *                              there is no need to waste peformance for a
-	 *                              crawl. The initial index might take a long time.
 	 */
 	public MusicFileIndexer(String[] allowedFileExtensions, DatabaseManager database) {
 
@@ -143,7 +137,7 @@ public class MusicFileIndexer {
 	 * 
 	 * @param reIndex  If true all entries in the database will be deleted and files
 	 *                 are reindexed from scratch;
-	 * @param callback
+	 * @param baseDirectory the directory to search
 	 */
 	public int crawl(boolean reIndex, Path baseDirectory) {
 
@@ -190,11 +184,6 @@ public class MusicFileIndexer {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
-		// Purge invalid data
-		// SELECT * FROM TRACKS WHERE DIRECTORY.ID = directoryId and lastIndexed <
-		// startTimestamp
-
 		return 0;
 	}
 
