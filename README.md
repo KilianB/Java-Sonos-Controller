@@ -24,7 +24,6 @@ Starting with version 2.0.0 at least Java 10 is required.
 	<groupId>github.com.kilianB</groupId>
 	<artifactId>sonos-controller</artifactId>
 	<version>2.0.0</version>
-	<type>pom</type>
 </dependency>
 ```
 
