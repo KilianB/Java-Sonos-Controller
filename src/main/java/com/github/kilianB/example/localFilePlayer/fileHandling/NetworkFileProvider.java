@@ -35,19 +35,8 @@ public class NetworkFileProvider {
 		this.host = host;
 		this.port = port;
 		this.mapPrefix = host+":"+port + "/";
-		
-		//TODO set safe path so the user can not navigate wherever he likes
-
-	//FileResourceManager sharedFolderRessourceManager = new FileResourceManager(globalSharedFolder, 0);
-		
-		
-		//final ResourceHandler textToSpeechRessourceHandler = new ResourceHandler(textToSpeechRessourceManager);
-		
-		//TODO MIME Mapping
 	
-		
 		server = Undertow.builder().addHttpListener(port, host, pathHandler).build();
-		
 		
 		//Undertow wraps it's exception in a runtime exception.
 		try {
@@ -84,9 +73,9 @@ public class NetworkFileProvider {
 			FileResourceManager sharedFolderRessourceManager = new FileResourceManager(directory, 0);
 		
 			ResourceHandler sharedRessourceManager = new ResourceHandler(sharedFolderRessourceManager);
+			//TODO MIME Mapping and index directoy listing disabled for more protection	
 			sharedRessourceManager.setDirectoryListingEnabled(true);
 			
-		
 			pathHandler.addPrefixPath("/"+prefixPath, sharedRessourceManager);
 		
 			mappedFolders.add(prefixPath);
