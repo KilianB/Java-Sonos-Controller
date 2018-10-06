@@ -79,6 +79,13 @@ public class TrackInfo {
 		return (this.uri.equals(infoToCompareTo.uri) && this.metadata.equals(infoToCompareTo.metadata));
 	}
 	
-	
+	/**
+	 * Return true if the track info object points at a non present track.
+	 * this.getCurrentTrackInfo() will return an object like this if the queue is empty.
+	 * @return
+	 */
+	public boolean isEmpty() {
+		return (this.queueIndex == 0 && this.duration == 0 && this.position == 0 && this.uri.isEmpty());
+	}
 
 }

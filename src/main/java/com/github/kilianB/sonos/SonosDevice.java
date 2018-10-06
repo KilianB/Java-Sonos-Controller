@@ -146,9 +146,9 @@ public class SonosDevice {
 	 * device can most likely be used without any loss of functionality but it is
 	 * still recommended to use the constructor {@link #SonosDevice(UPnPDevice)};
 	 * 
-	 * @param ip	The ip address of the sonos device
-	 * @throws UnknownHostException	If the supplied ip is not well formated or does not
-	 * point to a valid device
+	 * @param ip The ip address of the sonos device
+	 * @throws UnknownHostException If the supplied ip is not well formated or does
+	 *                              not point to a valid device
 	 */
 	@Deprecated
 	public SonosDevice(String ip) throws UnknownHostException {
@@ -170,10 +170,9 @@ public class SonosDevice {
 	/**
 	 * Play the currently selected track.
 	 * 
-	 * @throws IOException
-	 *             IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException
-	 *             UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void play() throws IOException, SonosControllerException {
 		CommandBuilder.transport("Play").put("InstanceID", "0").put("Speed", "1").executeOn(this.ip);
@@ -182,14 +181,11 @@ public class SonosDevice {
 	/**
 	 * Play a given stream. Pauses the queue.
 	 * 
-	 * @param uri
-	 *            URI of a stream to be played.
-	 * @param metadata
-	 *            The track metadata to show in the player (DIDL format).
-	 * @throws IOException
-	 *             IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException
-	 *             UPnP Error returned by the device
+	 * @param uri      URI of a stream to be played.
+	 * @param metadata The track metadata to show in the player (DIDL format).
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void playUri(String uri, TrackMetadata metadata) throws IOException, SonosControllerException {
 		String metadataString = "";
@@ -199,22 +195,23 @@ public class SonosDevice {
 		System.out.println("Play uri: " + uri);
 		CommandBuilder.transport("SetAVTransportURI").put("InstanceID", "0").put("CurrentURI", uri)
 				.put("CurrentURIMetaData", metadataString).executeOn(this.ip);
-		
+
 		this.play();
 	}
 
 	/**
 	 * Play an item from the queue.
 	 * 
-	 * @param queueIndex The index of the item in the queue greater 0  
-	 * @throws IOException IOException during HTTP Client
-	 *            operation . Sending the command.
-	 * @throws SonosControllerException
-	 *             UPnP Error returned by the device
+	 * @param queueIndex The index of the item in the queue. Starting at 1
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws IllegalArgumentException if queue index < 1
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
+	
 	public void playFromQueue(int queueIndex) throws IOException, SonosControllerException {
-		if (queueIndex < 0) {
-			throw new IllegalArgumentException("Queue index cannot be < 0.");
+		if (queueIndex < 1) {
+			throw new IllegalArgumentException("Queue index cannot be < 1.");
 		}
 		this.playUri("x-rincon-queue:" + this.getSpeakerInfo().getLocalUID() + "#0", null);
 		CommandBuilder.transport("Seek").put("InstanceID", "0").put("Unit", "TRACK_NR")
@@ -226,38 +223,46 @@ public class SonosDevice {
 	 * Pause current music, Play URI and resume (very useful for announcement). clip
 	 * is a blocking method. Take care !
 	 * 
-	 * @param uri
-	 *            URI of a stream to be played.
-	 * @param metadata
-	 *            The track metadata to show in the player (DIDL format).
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
-	 * @throws InterruptedException If the thread gets interrupted
+	 * @param uri      URI of a stream to be played.
+	 * @param metadata The track metadata to show in the player (DIDL format).
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
+	 * @throws InterruptedException     If the thread gets interrupted
 	 */
-	public void clip(String uri, TrackMetadata metadata)
+	public synchronized void clip(String uri, TrackMetadata metadata)
 			throws IOException, SonosControllerException, InterruptedException {
 		PlayState previousState = this.getPlayState();
 		TrackInfo previous = this.getCurrentTrackInfo();
 		this.playUri(uri, metadata);
+
+		// Fix. If list is empty this will throw an error
+
+		// TODO I don't like vmichalak implementation. Can we resolve this without
+		// polling? Maybe even use the upnp listener track changed?
 		while (!this.getPlayState().equals(PlayState.STOPPED)) {
 			Thread.sleep(500);
 		}
-		this.playUri("x-rincon-queue:" + this.getSpeakerInfo().getLocalUID() + "#0", null);
-		CommandBuilder.transport("Seek").put("InstanceID", "0").put("Unit", "TRACK_NR")
-				.put("Target", String.valueOf(previous.getQueueIndex())).executeOn(this.ip);
-		this.seek(previous.getPosition());
-		if (previousState.equals(PlayState.PLAYING)) {
-			this.play();
-		} else {
-			this.pause();
+	
+		if (!this.getQueue(0,1).isEmpty()) {
+			this.playUri("x-rincon-queue:" + this.getSpeakerInfo().getLocalUID() + "#0", null);
+			CommandBuilder.transport("Seek").put("InstanceID", "0").put("Unit", "TRACK_NR")
+					.put("Target", String.valueOf(previous.getQueueIndex())).executeOn(this.ip);
+			this.seek(previous.getPosition());
+			if (previousState.equals(PlayState.PLAYING)) {
+				this.play();
+			} else {
+				this.pause();
+			}
 		}
 	}
 
 	/**
 	 * Pause the currently playing track.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void pause() throws IOException, SonosControllerException {
 		CommandBuilder.transport("Pause").put("InstanceID", "0").put("Speed", "1").executeOn(this.ip);
@@ -267,8 +272,9 @@ public class SonosDevice {
 	 * Get the play state of the device.
 	 * 
 	 * @return current PlayState of the device
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public PlayState getPlayState() throws IOException, SonosControllerException {
 		String r = CommandBuilder.transport("GetTransportInfo").put("InstanceID", "0").executeOn(this.ip);
@@ -278,8 +284,9 @@ public class SonosDevice {
 	/**
 	 * Stop the currently playing track.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void stop() throws IOException, SonosControllerException {
 		CommandBuilder.transport("Stop").put("InstanceID", "0").put("Speed", "1").executeOn(this.ip);
@@ -289,10 +296,10 @@ public class SonosDevice {
 	 * Seeks to a given timestamp in the current track, specified in the format
 	 * HH:MM:SS.
 	 * 
-	 * @param time
-	 *            specified in the format HH:MM:SS.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param time specified in the format HH:MM:SS.
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void seek(String time) throws IOException, SonosControllerException {
 		CommandBuilder.transport("Seek").put("InstanceID", "0").put("Unit", "REL_TIME").put("Target", time)
@@ -306,8 +313,9 @@ public class SonosDevice {
 	/**
 	 * Go to the next track on the queue.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void next() throws IOException, SonosControllerException {
 		CommandBuilder.transport("Next").put("InstanceID", "0").put("Speed", "1").executeOn(this.ip);
@@ -316,8 +324,9 @@ public class SonosDevice {
 	/**
 	 * Go back to the previously played track.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void previous() throws IOException, SonosControllerException {
 		CommandBuilder.transport("Previous").put("InstanceID", "0").put("Speed", "1").executeOn(this.ip);
@@ -326,12 +335,11 @@ public class SonosDevice {
 	/**
 	 * Adds a given track to the queue.
 	 * 
-	 * @param uri
-	 *            URI of a stream to be played.
-	 * @param metadata
-	 *            The track metadata to show in the player (DIDL format).
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param uri      URI of a stream to be played.
+	 * @param metadata The track metadata to show in the player (DIDL format).
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void addToQueue(String uri, TrackMetadata metadata) throws IOException, SonosControllerException {
 		String metadataString = "";
@@ -342,33 +350,37 @@ public class SonosDevice {
 				.put("EnqueuedURIMetaData", metadataString).put("DesiredFirstTrackNumberEnqueued", "0")
 				.put("EnqueueAsNext", "1").executeOn(this.ip);
 	}
-	
 
 	/**
-	 *  Adds a given track to the queue.
+	 * Adds a given track to the queue.
+	 * 
 	 * @param queueIndex the index of the queue the track to shall be inserted
-	 * @param uri
-	 * 	URI of a stream to be played.
-	 * @param metadata The track metadata to show in the player (DIDL format).
-	 * @throws IOException IOException during HTTP Client operation . Sending the command.
+	 * @param uri        URI of a stream to be played.
+	 * @param metadata   The track metadata to show in the player (DIDL format).
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
 	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
-	public void addToQueue(int queueIndex, String uri, TrackMetadata metadata) throws IOException, SonosControllerException {
+	public void addToQueue(int queueIndex, String uri, TrackMetadata metadata)
+			throws IOException, SonosControllerException {
 		String metadataString = "";
 		if (metadata != null) {
 			metadataString = metadata.toDIDL();
 		}
 		CommandBuilder.transport("AddURIToQueue").put("InstanceID", "0").put("EnqueuedURI", uri)
-		.put("EnqueuedURIMetaData", metadataString).put("DesiredFirstTrackNumberEnqueued", Integer.toString(queueIndex))
-		.put("EnqueueAsNext", "0").executeOn(this.ip);
+				.put("EnqueuedURIMetaData", metadataString)
+				.put("DesiredFirstTrackNumberEnqueued", Integer.toString(queueIndex)).put("EnqueueAsNext", "0")
+				.executeOn(this.ip);
 	}
-	
+
 	/**
 	 * Remove a track from the queue.
 	 * 
-	 * @param queueIndex index of the item to remove from the queue. Has to be greater than 0
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param queueIndex index of the item to remove from the queue. Has to be
+	 *                   greater than 0
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void removeFromQueue(int queueIndex) throws IOException, SonosControllerException {
 		if (queueIndex < 0) {
@@ -382,8 +394,9 @@ public class SonosDevice {
 	 * Get Current Track Info (position in the queue, duration, position, ...).
 	 * 
 	 * @return TrackInfo object.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public TrackInfo getCurrentTrackInfo() throws IOException, SonosControllerException {
 		String r = CommandBuilder.transport("GetPositionInfo").put("InstanceID", "0").put("Channel", "Master")
@@ -401,14 +414,14 @@ public class SonosDevice {
 				ParserHelper.findOne("<TrackURI>(.*)</TrackURI>", r),
 				TrackMetadata.parse(ParserHelper.findOne("<TrackMetaData>(.*)</TrackMetaData>", r)));
 	}
-	
 
 	/**
 	 * Get the play mode for the queue.
 	 * 
 	 * @return current PlayMode of the queue
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public PlayMode getPlayMode() throws IOException, SonosControllerException {
 		String r = CommandBuilder.transport("GetTransportSettings").put("InstanceID", "0").executeOn(this.ip);
@@ -419,8 +432,9 @@ public class SonosDevice {
 	 * Sets the play mode for the queue.
 	 * 
 	 * @param playMode New play mode
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setPlayMode(PlayMode playMode) throws IOException, SonosControllerException {
 		CommandBuilder.transport("SetPlayMode").put("InstanceID", "0").put("NewPlayMode", playMode.toString())
@@ -430,8 +444,9 @@ public class SonosDevice {
 	/**
 	 * Remove all tracks from the queue.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void clearQueue() throws IOException, SonosControllerException {
 		CommandBuilder.transport("RemoveAllTracksFromQueue").put("InstanceID", "0").executeOn(this.ip);
@@ -441,8 +456,9 @@ public class SonosDevice {
 	 * Return if the Sonos is joined with another one.
 	 * 
 	 * @return True if is joined, false if is isn't
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public boolean isJoined() throws IOException, SonosControllerException {
 		return this.getZoneGroupState().getZonePlayerUIDInGroup().size() > 1;
@@ -452,8 +468,9 @@ public class SonosDevice {
 	 * Get all Sonos speaker joined with this speaker.
 	 * 
 	 * @return List of Sonos speaker joined with this speaker.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public List<SonosDevice> joinedWith() throws IOException, SonosControllerException {
 		return this.getZoneGroupState().getSonosDevicesInGroup();
@@ -462,10 +479,10 @@ public class SonosDevice {
 	/**
 	 * Join this Sonos speaker to another.
 	 * 
-	 * @param master
-	 *            master speaker
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param master master speaker
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void join(SonosDevice master) throws IOException, SonosControllerException {
 		this.join(master.getSpeakerInfo().getLocalUID());
@@ -474,10 +491,10 @@ public class SonosDevice {
 	/**
 	 * Join this Sonos speaker to another.
 	 * 
-	 * @param masterUID
-	 *            master speaker UID
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param masterUID master speaker UID
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void join(String masterUID) throws IOException, SonosControllerException {
 		CommandBuilder.transport("SetAVTransportURI").put("InstanceID", "0").put("CurrentURI", "x-rincon:" + masterUID)
@@ -487,8 +504,9 @@ public class SonosDevice {
 	/**
 	 * Remove this speaker from a group.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void unjoin() throws IOException, SonosControllerException {
 		CommandBuilder.transport("BecomeCoordinatorOfStandaloneGroup").put("InstanceID", "0").put("Speed", "1")
@@ -498,8 +516,9 @@ public class SonosDevice {
 	/**
 	 * Switch the speaker's input to line-in.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void switchToLineIn() throws IOException, SonosControllerException {
 		String uid = this.getSpeakerInfo().getLocalUID();
@@ -511,8 +530,9 @@ public class SonosDevice {
 	 * Switch the speaker's input to TV input. /!\ WARNING: WORKS ONLY WITH PLAYBAR
 	 * / PLAYBASE /!\
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void switchToTV() throws IOException, SonosControllerException {
 		String uid = this.getSpeakerInfo().getLocalUID();
@@ -525,8 +545,9 @@ public class SonosDevice {
 	 * Get the Sonos speaker volume.
 	 * 
 	 * @return A volume value between 0 and 100
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public int getVolume() throws IOException, SonosControllerException {
 		String r = CommandBuilder.rendering("GetVolume").put("InstanceID", "0").put("Channel", "Master")
@@ -537,10 +558,10 @@ public class SonosDevice {
 	/**
 	 * Set the Sonos speaker volume.
 	 * 
-	 * @param volume
-	 *            A volume value between 0 and 100
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param volume A volume value between 0 and 100
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setVolume(int volume) throws IOException, SonosControllerException {
 		CommandBuilder.rendering("SetVolume").put("InstanceID", "0").put("Channel", "Master")
@@ -551,8 +572,9 @@ public class SonosDevice {
 	 * Return the mute state of the Sonos speaker.
 	 * 
 	 * @return True if is muted, false if isn't
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public boolean isMuted() throws IOException, SonosControllerException {
 		String r = CommandBuilder.rendering("GetMute").put("InstanceID", "0").put("Channel", "Master")
@@ -563,10 +585,10 @@ public class SonosDevice {
 	/**
 	 * Mute or unmute the Sonos speaker.
 	 * 
-	 * @param state
-	 *            True to mute, False to unmute
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param state True to mute, False to unmute
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setMute(boolean state) throws IOException, SonosControllerException {
 		CommandBuilder.rendering("SetMute").put("InstanceID", "0").put("Channel", "Master")
@@ -576,8 +598,9 @@ public class SonosDevice {
 	/**
 	 * Mute or unmute the speaker.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void switchMute() throws IOException, SonosControllerException {
 		setMute(!isMuted());
@@ -587,8 +610,9 @@ public class SonosDevice {
 	 * Get the Sonos speaker bass EQ.
 	 * 
 	 * @return value between 10 and -10
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public int getBass() throws IOException, SonosControllerException {
 		String r = CommandBuilder.rendering("GetBass").put("InstanceID", "0").put("Channel", "Master")
@@ -599,10 +623,10 @@ public class SonosDevice {
 	/**
 	 * Set the Sonos speaker bass EQ.
 	 * 
-	 * @param bass
-	 *            Value between 10 and -10
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param bass Value between 10 and -10
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setBass(int bass) throws IOException, SonosControllerException {
 		if (bass > 10 || bass < -10) {
@@ -616,8 +640,9 @@ public class SonosDevice {
 	 * Get the Sonos speaker's loudness compensation.
 	 * 
 	 * @return True if is On, False if isn't
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public boolean isLoudnessActivated() throws IOException, SonosControllerException {
 		String r = CommandBuilder.rendering("GetLoudness").put("InstanceID", "0").put("Channel", "Master")
@@ -628,10 +653,10 @@ public class SonosDevice {
 	/**
 	 * Set the Sonos speaker's loudness compensation.
 	 * 
-	 * @param loudness
-	 *            True for set On, False for set Off
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param loudness True for set On, False for set Off
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setLoudness(boolean loudness) throws IOException, SonosControllerException {
 		CommandBuilder.rendering("SetLoudness").put("InstanceID", "0").put("Channel", "Master")
@@ -642,8 +667,9 @@ public class SonosDevice {
 	 * Get the Sonos speaker's treble EQ.
 	 * 
 	 * @return value between -10 and 10
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public int getTreble() throws IOException, SonosControllerException {
 		String r = CommandBuilder.rendering("GetTreble").put("InstanceID", "0").put("Channel", "Master")
@@ -654,10 +680,10 @@ public class SonosDevice {
 	/**
 	 * Set the Sonos speaker's treble EQ.
 	 * 
-	 * @param treble
-	 *            value between -10 and 10
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @param treble value between -10 and 10
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setTreble(int treble) throws IOException, SonosControllerException {
 		if (treble > 10 || treble < -10) {
@@ -672,8 +698,9 @@ public class SonosDevice {
 	 * PLAYBAR / PLAYBASE /!\
 	 * 
 	 * @return True if activated, False if isn't.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public boolean isNightModeActivated() throws IOException, SonosControllerException {
 		String s = CommandBuilder.rendering("GetEQ").put("InstanceID", "0").put("EQType", "NightMode")
@@ -685,8 +712,9 @@ public class SonosDevice {
 	 * Set the Night Mode. /!\ WARNING: WORKS ONLY WITH PLAYBAR / PLAYBASE /!\
 	 * 
 	 * @param state new night mode
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setNightMode(boolean state) throws IOException, SonosControllerException {
 		CommandBuilder.rendering("SetEQ").put("InstanceID", "0").put("EQType", "NightMode")
@@ -696,8 +724,9 @@ public class SonosDevice {
 	/**
 	 * Turn On / Off the Night Mode.
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void switchNightMode() throws IOException, SonosControllerException {
 		this.setNightMode(!this.isNightModeActivated());
@@ -708,8 +737,9 @@ public class SonosDevice {
 	 * PLAYBAR / PLAYBASE /!\
 	 * 
 	 * @return True if activated, False if isn't.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public boolean isDialogModeActivated() throws IOException, SonosControllerException {
 		String s = CommandBuilder.rendering("GetEQ").put("InstanceID", "0").put("EQType", "DialogLevel")
@@ -721,8 +751,9 @@ public class SonosDevice {
 	 * Set the Dialog Mode. /!\ WARNING: WORKS ONLY WITH PLAYBAR / PLAYBASE /!\
 	 * 
 	 * @param state new dialog mode
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void setDialogMode(boolean state) throws IOException, SonosControllerException {
 		CommandBuilder.rendering("SetEQ").put("InstanceID", "0").put("EQType", "DialogLevel")
@@ -733,8 +764,9 @@ public class SonosDevice {
 	 * Turn On / Off the Night Mode. /!\ WARNING: WORKS ONLY WITH PLAYBAR / PLAYBASE
 	 * /!\
 	 * 
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public void switchDialogMode() throws IOException, SonosControllerException {
 		this.setDialogMode(!this.isDialogModeActivated());
@@ -748,8 +780,9 @@ public class SonosDevice {
 	 * Get the zone name. (for exemple: "Bedroom + 1", "Living Room", ...)
 	 * 
 	 * @return the zone name.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public String getZoneName() throws IOException, SonosControllerException {
 		return this.getZoneGroupState().getName();
@@ -758,9 +791,11 @@ public class SonosDevice {
 	/**
 	 * Get the room name of the sonos speaker. This method caches the result and
 	 * will not be aware of changes until the {@link #getRoomName()} method was
-	 * called at least once. <p> This method hides the usual IO and SonosControler
-	 * Exceptions for convenience sake. To ensure you got a prober result the first
-	 * return value should be checked against null.
+	 * called at least once.
+	 * <p>
+	 * This method hides the usual IO and SonosControler Exceptions for convenience
+	 * sake. To ensure you got a prober result the first return value should be
+	 * checked against null.
 	 * 
 	 * @return the cached room name of the device or null if the room name wasn't
 	 *         retrieved at least once
@@ -781,8 +816,9 @@ public class SonosDevice {
 	 * Get the room name. (for exemple: "Bedroom", "Living Room", ...)
 	 *
 	 * @return the room name.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public String getRoomName() throws IOException, SonosControllerException {
 		String r = CommandBuilder.download(this.ip, "xml/device_description.xml");
@@ -795,9 +831,11 @@ public class SonosDevice {
 	/**
 	 * Get the device name of the sonos speaker. This method caches the result and
 	 * will not be aware of changes until the {@link #getDeviceName()} method was
-	 * called at least once. <p> This method hides the usual IO and SonosControler
-	 * Exceptions for convenience sake. To ensure you got a prober result the first
-	 * return value should be checked against null.
+	 * called at least once.
+	 * <p>
+	 * This method hides the usual IO and SonosControler Exceptions for convenience
+	 * sake. To ensure you got a prober result the first return value should be
+	 * checked against null.
 	 *
 	 * @return the cached room name of the device or null if the room name wasn't
 	 *         retrieved at least once
@@ -818,8 +856,9 @@ public class SonosDevice {
 	 * Get the device name. (for exemple: "Bedroom (L)", "Bedroom (R)", ...)
 	 * 
 	 * @return the device name.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public String getDeviceName() throws IOException, SonosControllerException {
 		String deviceName = this.getSpeakerInfo().getDeviceName();
@@ -874,8 +913,9 @@ public class SonosDevice {
 	 * Check if the speaker is a group coordinator or not.
 	 * 
 	 * @return True if the speaker is a group coordinator, otherwise False.
-	 * @throws IOException	IOException during HTTP Client operation . Sending the command.
-	 * @throws SonosControllerException	 UPnP Error returned by the device
+	 * @throws IOException              IOException during HTTP Client operation .
+	 *                                  Sending the command.
+	 * @throws SonosControllerException UPnP Error returned by the device
 	 */
 	public boolean isCoordinator() throws IOException, SonosControllerException {
 		// If zone have the same UID as the speaker -> speaker is the coordinator of the
@@ -947,14 +987,13 @@ public class SonosDevice {
 	}
 
 	/*
-	 *	Subscription api
+	 * Subscription api
 	 */
 
 	/**
 	 * Register an event handler to listen to events emitted by this device
 	 * 
-	 * @param eventHandler
-	 *            the event handler to process events
+	 * @param eventHandler the event handler to process events
 	 * @return true if the event handler was sucessfully registered false if it
 	 *         failed. This might happen due to IOException when subscribing to the
 	 *         underlying UPnP Events
@@ -976,8 +1015,7 @@ public class SonosDevice {
 	/**
 	 * Remove an event handler from the notification list.
 	 * 
-	 * @param eventHandler
-	 *            The event handler who no langer shall receive events
+	 * @param eventHandler The event handler who no langer shall receive events
 	 * @return true if the event handler was sucessfully removed from the device
 	 *         false if the event handler was not present in the first place
 	 */
@@ -995,18 +1033,19 @@ public class SonosDevice {
 			return false;
 		}
 	}
-	
-	
+
 	@Deprecated
 	/**
-	 * Get the uPnPDevice backing this sonos controller. Calling this method usually is not 
-	 * necessary and there is mostly no reason to access the underlying device.
+	 * Get the uPnPDevice backing this sonos controller. Calling this method usually
+	 * is not necessary and there is mostly no reason to access the underlying
+	 * device.
+	 * 
 	 * @return the upnp device
 	 */
 	public UPnPDevice getUPnPDevice() {
 		return uPnPDevice;
 	}
-	
+
 	private void subscribeToUPnPEvents() {
 		// Subscribe to all events
 		try {
@@ -1047,24 +1086,24 @@ public class SonosDevice {
 		}
 		uPnPSubscribed = false;
 	}
-	
+
 	public List<SonosEventListener> getEventListener() {
 		return sonosEventHandlers;
 	}
-	
-	
+
 	public String resolveAlbumURL(String baseURL) {
-		return "http://" + ip + ":1400" + baseURL; 
+		return "http://" + ip + ":1400" + baseURL;
 	}
-	
+
 	/**
-	 * Shuts down all non daemon threads associated with this device after registering
-	 * event handlers. This will lead to jvm being able to orderly shutdown.
+	 * Shuts down all non daemon threads associated with this device after
+	 * registering event handlers. This will lead to jvm being able to orderly
+	 * shutdown.
 	 */
 	public void deinit() {
 		uPnPDevice.deinit();
 	}
-	
+
 	private static final Logger LOGGER = Logger.getLogger(SonosDevice.class.getName());
 
 }
