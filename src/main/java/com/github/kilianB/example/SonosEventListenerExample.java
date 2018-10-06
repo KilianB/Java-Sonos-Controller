@@ -94,9 +94,29 @@ public class SonosEventListenerExample {
 			});
 			
 			
+			//Listen to events for 15 seconds
+			try {
+				Thread.sleep(15000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			/* 
+			 * Release all resources and let the jvm shutdown.
+			 * Without this we will listen to events indefinitely. Has to be called on each
+			 * sonos devices we ever registered event handlers to.
+			 */
+			sonos.deinit();
+			
+			
+			
 		} catch (IOException | SonosControllerException e) {
 			e.printStackTrace();
 		}
+		
+		
+		
+		
 	}
 
 }

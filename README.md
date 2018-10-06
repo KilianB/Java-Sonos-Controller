@@ -7,7 +7,10 @@ Java API for controlling [SONOS](http://www.sonos.com/) players.
 <img src ="http://blog.vmichalak.com/wp-content/uploads/2017/01/SONOS_controller_header.png" />
 </p>
 
+
 ## Available via Bintray and JCenter
+
+Starting with version 2.0.0 at least Java 10 is required.
 
 ```
 <repositories>
@@ -20,7 +23,7 @@ Java API for controlling [SONOS](http://www.sonos.com/) players.
 <dependency>
 	<groupId>github.com.kilianB</groupId>
 	<artifactId>sonos-controller</artifactId>
-	<version>1.0.0</version>
+	<version>2.0.0</version>
 </dependency>
 ```
 
@@ -30,6 +33,12 @@ Discovery all Sonos Devices on your network.
 
 ```java
 List<SonosDevice> devices = SonosDiscovery.discover();
+
+//Asynchronous
+SonosDiscovery.discoverAsynch(3, device ->{
+   System.out.println("Device: " + device + " found");
+});
+
 ```
 
 Connect to a known Sonos and pause currently playing music.
@@ -64,6 +73,34 @@ sonos.registerSonosEventListener(new SonosEventAdapter() {
 ```
 
 Gain full access by utilizing the entire range of callback methods found in the [SonosEventListener.java](https://github.com/KilianB/Java-Sonos-Controller/blob/master/src/main/java/com/github/kilianB/sonos/listener/SonosEventListener.java).
+
+
+## More examples
+
+### 1. Text to speech playback on any sonos speakers
+
+A small example utilizing my <a href="https://github.com/KilianB/GoogleTranslatorTTS">prototyping text to speech library</a>. 
+The generated mp3 file is hosted on the current machine to make it accessible to the sonos speakers on the network.
+
+<a href="src/main/java/com/github/kilianB/example/voiceToTextPlayback">Source</a>
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/9025925/46544392-becbb800-c8c3-11e8-90d8-945bf1e3880d.jpg" />
+</p>
+
+### 2. Simple Sonos Desktop Player With Local File Playback
+
+A basic player allowing to playback local music files. Index any folder on your computer, create a track index in a SQL 
+table and make the folders accessible to the network. While you are able to start stop, playback change volume etc,
+this is just intended to lay out the steps needed to implement local music file playback and not function as a standalone application.
+
+<ol>
+	<li><a href="src/main/java/com/github/kilianB/example/localFilePlayer/fileHandling/MusicFileIndexer.java">Directory Crawler & File Indexer</a></li>
+	<li><a href="src/main/java/com/github/kilianB/example/localFilePlayer/fileHandling/DatabaseManager.java">SQL Database</a></li>
+	<li><a href="src/main/java/com/github/kilianB/example/localFilePlayer/fileHandling/NetworkFileProvider.java">File Hosting</a></li>
+</ol>
+
+![sonosspeaker](https://user-images.githubusercontent.com/9025925/46569592-b8871b80-c957-11e8-9095-d4310b4c977b.jpg)
 
 
 

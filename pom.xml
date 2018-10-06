@@ -1,10 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>github.com.kilianB</groupId>
 	<artifactId>sonos-controller</artifactId>
-	<version>1.0.0</version>
+	<version>2.0.0</version>
 
 	<description>A java library allowing to control sonos speakers via UPnP.</description>
 	<url>https://github.com/KilianB/sonosControllerPrivate</url>
@@ -15,7 +16,7 @@
 		<bintrayPackage>Java-Sonos-Controller</bintrayPackage>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-	
+
 	<licenses>
 		<license>
 			<name>GPL-3.0</name>
@@ -48,8 +49,13 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.7.0</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>10</source>
+					<target>10</target>
+					<!-- exclude for deployment  
+					<excludes>
+						<exclude>**/example/**</exclude>
+					</excludes>
+					-->
 				</configuration>
 			</plugin>
 			<plugin>
@@ -72,9 +78,7 @@
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
 				<configuration>
-					<excludes>
-						<exclude>**/kilianB/examples/**</exclude>
-					</excludes>
+					<excludePackageNames>*.example</excludePackageNames>
 				</configuration>
 				<executions>
 					<execution>
@@ -88,9 +92,7 @@
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<configuration>
-					<excludes>
-						<exclude>**/kilianB/examples/**</exclude>
-					</excludes>
+					<excludePackageNames>*.example</excludePackageNames>
 				</configuration>
 				<executions>
 					<execution>
@@ -103,8 +105,18 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
+	<repositories>
+		<repository>
+			<id>jcenter</id>
+			<url>https://jcenter.bintray.com/</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
+
+		<!-- used for the library -->
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
@@ -120,6 +132,51 @@
 			<artifactId>jdom2</artifactId>
 			<version>2.0.6</version>
 		</dependency>
+
+		<!-- Only for demo. Remove from deployed jar  -->
+
+		<dependency>
+			<groupId>com.jfoenix</groupId>
+			<artifactId>jfoenix</artifactId>
+			<version>9.0.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.jthink</groupId>
+			<artifactId>jaudiotagger</artifactId>
+			<version>2.2.6-PATHRIK</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.undertow</groupId>
+			<artifactId>undertow-core</artifactId>
+			<version>1.4.12.Final</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>23.5-jre</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<version>1.4.197</version>
+		</dependency>
+
+		
+		<!-- Database full text search. Update to v 7.5 after testing -->
+
+		<!-- Currently not working with old lucene version <dependency> <groupId>org.apache.lucene</groupId> 
+			<artifactId>lucene-core</artifactId> <version>3.6.2</version> </dependency> -->
+		<dependency>
+			<groupId>github.com.kilianB</groupId>
+			<artifactId>GoogleTranslatorTTS</artifactId>
+			<version>1.0.1</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<!-- Environment Settings -->
@@ -133,9 +190,9 @@
 
 
 	<scm>
-  		<connection>scm:git:git://github.com/KilianB/Java-Sonos-Controller.git</connection>
- 		<developerConnection>scm:git:ssh://github.com/KilianB/Java-Sonos-Controller.git</developerConnection>
-  		<url>https://github.com/KilianB/Java-Sonos-Controller/tree/master</url>
+		<connection>scm:git:git://github.com/KilianB/Java-Sonos-Controller.git</connection>
+		<developerConnection>scm:git:ssh://github.com/KilianB/Java-Sonos-Controller.git</developerConnection>
+		<url>https://github.com/KilianB/Java-Sonos-Controller/tree/master</url>
 	</scm>
-	
+
 </project>

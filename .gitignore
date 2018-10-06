@@ -61,3 +61,6 @@ doc/_build
 /.settings/
 /bin/
 /target/
+
+#Music files
+.mp3

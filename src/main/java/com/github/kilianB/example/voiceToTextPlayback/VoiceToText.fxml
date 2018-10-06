@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import com.jfoenix.controls.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<BorderPane prefHeight="50.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <center>
+      <JFXTextField fx:id="textToConvertField" labelFloat="true" promptText="Text" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets left="5.0" right="5.0" />
+         </BorderPane.margin></JFXTextField>
+   </center>
+   <left>
+      <JFXComboBox fx:id="speakerCbox" labelFloat="true" maxWidth="150.0" promptText="Speaker" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets left="5.0" right="5.0" />
+         </BorderPane.margin></JFXComboBox>
+   </left>
+   <right>
+      <JFXButton fx:id="announceBtn" buttonType="RAISED" style="-fx-background-color: eee;" text="Announce" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets left="5.0" right="5.0" />
+         </BorderPane.margin></JFXButton>
+   </right>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="15.0" />
+   </padding>
+   <opaqueInsets>
+      <Insets />
+   </opaqueInsets>
+</BorderPane>

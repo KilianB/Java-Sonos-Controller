@@ -26,6 +26,10 @@ public class TrackInfo {
 		return queueIndex;
 	}
 
+	/**
+	 * The song lenght in seconds
+	 * @return the song duration in seconds
+	 */
 	public int getDuration() {
 		return duration;
 	}
@@ -34,6 +38,10 @@ public class TrackInfo {
 		return ParserHelper.secondsToFormatedTimestamp(duration);
 	}
 
+	/**
+	 * Return the current song position in seconds
+	 * @return the position of the song in seconds
+	 */
 	public int getPosition() {
 		return position;
 	}
@@ -71,6 +79,13 @@ public class TrackInfo {
 		return (this.uri.equals(infoToCompareTo.uri) && this.metadata.equals(infoToCompareTo.metadata));
 	}
 	
-	
+	/**
+	 * Return true if the track info object points at a non present track.
+	 * this.getCurrentTrackInfo() will return an object like this if the queue is empty.
+	 * @return true if no field of the track info is set, false otherwise
+	 */
+	public boolean isEmpty() {
+		return (this.queueIndex == 0 && this.duration == 0 && this.position == 0 && this.uri.isEmpty());
+	}
 
 }

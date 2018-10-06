@@ -1,0 +1,30 @@
+ Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0] 6.10.2018
+
+### Fixed
+- Preliminary fix for a race condition when parsing upnp events. Change to a small timeout before closing the socket after reading data from socket.
+	- using a timeout for the content header and reading the expected bytecount is a more stable solution and should be implemented in future releases.
+	- clip method throws exception if queue is empty
+
+### Changed
+- Use silent upnp event adapters for default upnp event listener propagation. The use of the verbose option
+	during development was used to debug purposes but now we don't want to spam the logger with useless information
+	every time we append a listener.
+- bumped major version to 2.0.0 
+- bumed required java version 8 ->  10 
+
+### Added
+- Enqueue audio at a given position in the queue instead of just the end
+- Asynch device disovery with callback.
+- Changelog
+- Demo example
+- deprecated method to get the underlying upnp device
+- utility method in sonos devices to convert a getAlbumUri to a usable URL. 
+
+### Removed
+- Obsolete System debug messages

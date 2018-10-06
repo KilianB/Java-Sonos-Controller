@@ -8,6 +8,7 @@ import org.jdom2.Namespace;
 import com.github.kilianB.sonos.ParserHelper;
 import com.github.kilianB.sonos.SonosDevice;
 import com.github.kilianB.uPnPClient.UPnPEvent;
+import com.github.kilianB.uPnPClient.UPnPEventAdapter;
 import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
 
 /**
@@ -16,7 +17,7 @@ import com.github.kilianB.uPnPClient.UPnPEventAdapterVerbose;
  * @author Kilian
  *
  */
-public class RenderingControlListener extends UPnPEventAdapterVerbose{
+public class RenderingControlListener extends UPnPEventAdapter{
 	private static final  Namespace upnpRCNamespace =  Namespace.getNamespace("urn:schemas-upnp-org:metadata-1-0/RCS/");
 	
 	/**
@@ -25,7 +26,7 @@ public class RenderingControlListener extends UPnPEventAdapterVerbose{
 	private final List<SonosEventListener> listeners;
 
 	public RenderingControlListener(String servicePath, SonosDevice device) {
-		super(servicePath);
+		//super(servicePath);
 		listeners = device.getEventListener();
 	}
 

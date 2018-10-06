@@ -1,0 +1,37 @@
+.zoneToken {
+	-fx-background-color: white;
+	-fx-background-radius: 5px;
+	-fx-border-radius: 5px;
+	-fx-border-width: 2px;
+	-fx-border-color: black;
+	-fx-pref-width: 140;
+	-fx-pref-height: 100;
+	-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.8), 7, 0, 0, 0);
+}
+
+.zoneToken.selected{
+	-fx-background-color: #ccc;
+}
+
+.zoneToken:hover{
+	-fx-background-color: #ddd;
+}
+
+.zoneTokenImageView{
+	-fx-border-radius: 5px;
+	-fx-border-width: 1px;
+	-fx-border-color: black;
+}
+
+.playing{
+	-fx-background-color: #9bc1ff;
+}
+
+
+.zoneNameTitle{
+	-fx-font-size: 14pt ;
+}
+
+.scroll-pane>.viewport {
+	-fx-background-color: transparent;
+}

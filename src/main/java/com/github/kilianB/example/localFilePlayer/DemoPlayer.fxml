@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="622.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <left>
+      <ScrollPane prefHeight="322.0" prefViewportHeight="336.0" prefViewportWidth="100.0" prefWidth="160.0" style="-fx-background-color: white;">
+         <content>
+            <VBox fx:id="roomRoot" spacing="20.0" style="-fx-background-color: white;" BorderPane.alignment="CENTER">
+               <padding>
+                  <Insets left="10.0" top="10.0" />
+               </padding></VBox>
+         </content>
+      </ScrollPane>
+   </left>
+   <top>
+      <FlowPane alignment="CENTER" columnHalignment="CENTER" hgap="5.0" prefHeight="64.0" prefWidth="200.0" style="-fx-background-color: white;" BorderPane.alignment="CENTER">
+         <children>
+            <ImageView fx:id="backBtn" fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true" />
+            <ImageView fx:id="playPauseBtn" fitHeight="64.0" fitWidth="64.0" pickOnBounds="true" preserveRatio="true" />
+            <ImageView fx:id="forwardBtn" fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true" />
+         </children>
+      </FlowPane>
+   </top>
+   <center>
+      <VBox alignment="TOP_RIGHT" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+         <children>
+            <BorderPane prefHeight="28.0" prefWidth="680.0">
+               <right>
+                  <Label fx:id="durationProgressLabel" text="0:00 / 3:30" BorderPane.alignment="CENTER" />
+               </right>
+               <left>
+                  <FlowPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <ImageView fx:id="volumeImg" fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
+                           <FlowPane.margin>
+                              <Insets right="5.0" />
+                           </FlowPane.margin>
+                        </ImageView>
+                        <Slider fx:id="volumeSlider" />
+                     </children>
+                  </FlowPane>
+               </left>
+               <VBox.margin>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </VBox.margin>
+            </BorderPane>
+            <Slider fx:id="songPositionSlider" />
+            <JFXTreeTableView fx:id="playlistTable" />
+            <GridPane>
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints maxHeight="62.0" minHeight="30.0" prefHeight="62.0" vgrow="SOMETIMES" />
+                <RowConstraints maxHeight="212.0" minHeight="50.0" prefHeight="186.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Button fx:id="clearListBtn" alignment="CENTER" mnemonicParsing="false" text="Clear Queue" GridPane.columnIndex="1">
+                     <GridPane.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </GridPane.margin>
+                  </Button>
+                  <JFXTreeTableView fx:id="indexedDirectories" currentItemsCount="4" minHeight="50.0" GridPane.columnSpan="2" GridPane.rowIndex="1" />
+                  <Button fx:id="addDirectoryBtn" mnemonicParsing="false" text="Add Directory" />
+               </children>
+               <VBox.margin>
+                  <Insets top="15.0" />
+               </VBox.margin>
+            </GridPane>
+         </children>
+      </VBox>
+   </center>
+   <bottom>
+      <FlowPane prefHeight="34.0" prefWidth="1000.0" BorderPane.alignment="CENTER">
+         <children>
+            <ProgressBar prefHeight="18.0" prefWidth="989.0" progress="0.0" />
+         </children>
+      </FlowPane>
+   </bottom>
+   <right>
+      <VBox>
+         <children>
+            <JFXTextField fx:id="searchLocalMusic" labelFloat="true" promptText="Search:">
+               <VBox.margin>
+                  <Insets bottom="12.0" left="8.0" right="8.0" top="12.0" />
+               </VBox.margin>
+            </JFXTextField>
+            <JFXTreeTableView fx:id="musicLibraryView" prefHeight="692.0" prefWidth="248.0" BorderPane.alignment="CENTER" />
+         </children>
+      </VBox>
+   </right>
+</BorderPane>
