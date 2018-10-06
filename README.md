@@ -36,7 +36,8 @@ Discovery all Sonos Devices on your network.
 List<SonosDevice> devices = SonosDiscovery.discover();
 
 //Asynchronous
-SonosDiscovery.discoverAsynch(1, device ->{
+SonosDiscovery.discoverAsynch(3, device ->{
+   System.out.println("Device: " + device + " found");
 });
 
 ```
@@ -84,7 +85,9 @@ The generated mp3 file is hosted on the current machine to make it accessible to
 
 <a href="src/main/java/com/github/kilianB/example/voiceToTextPlayback">Source</a>
 
-![texttospeech](https://user-images.githubusercontent.com/9025925/46544392-becbb800-c8c3-11e8-90d8-945bf1e3880d.jpg)
+<p align="center">
+<img src="https://user-images.githubusercontent.com/9025925/46544392-becbb800-c8c3-11e8-90d8-945bf1e3880d.jpg" />
+</p>
 
 ### 2. Simple Sonos Desktop Player With Local File Playback
 
