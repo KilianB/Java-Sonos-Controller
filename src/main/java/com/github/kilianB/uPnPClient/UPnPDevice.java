@@ -574,11 +574,11 @@ public class UPnPDevice {
 	/**
 	 * Shutdown non daemon threads ot the upnp device
 	 */
-        public void deinit() {
-                if(scheduler != null) {
-                        scheduler.shutdownNow();
-                }
-        }
+	public void deinit() {
+		if(scheduler != null) {
+			scheduler.shutdownNow();
+		}
+	}
 	
 	private Thread handleShutdown = new Thread(() -> {
 
@@ -613,3 +613,4 @@ public class UPnPDevice {
 	}
 
 }
+
